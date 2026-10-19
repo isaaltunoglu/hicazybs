@@ -1,6 +1,7 @@
 import { db } from '../firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { getCurrentTenantScope } from './tenantScope';
+import { getCurrentTenantScope, matchesTenantScope } from './tenantScope';
+import { DEMO_USERS, isDemoModeActive } from './demoData';
 
 export interface UserProfile {
     uid: string;
@@ -15,6 +16,9 @@ export interface UserProfile {
 }
 
 export const getAllApprovedUsers = async (): Promise<UserProfile[]> => {
+    if (isDemoModeActive()) {
+        return DEMO_USERS.filter((u) => matchesTenantScope(u));
+    }
     try {
         const scope = getCurrentTenantScope();
         const q = query(collection(db, 'approvedUsers'), orderBy('name', 'asc'));

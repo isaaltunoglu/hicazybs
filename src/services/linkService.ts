@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getCurrentTenantScope, matchesTenantScope } from './tenantScope';
+import { DEMO_LINKS, isDemoModeActive } from './demoData';
 
 export interface TeamLink {
     id: string;
@@ -31,6 +32,9 @@ export interface TeamLinkFormData {
 }
 
 export async function getAllLinks(): Promise<TeamLink[]> {
+    if (isDemoModeActive()) {
+        return DEMO_LINKS.filter((l) => matchesTenantScope(l));
+    }
     const snap = await getDocs(collection(db, 'teamLinks'));
     const links = snap.docs
         .filter((d) => matchesTenantScope(d.data()))

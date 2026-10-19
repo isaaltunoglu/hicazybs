@@ -7,6 +7,7 @@ import initialTheme from './theme/theme';
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { OrganizationProvider } from './contexts/OrganizationContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import { Flex, Spinner } from '@chakra-ui/react';
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
@@ -35,26 +36,28 @@ export default function Main() {
   const [currentTheme, setCurrentTheme] = useState(initialTheme);
   return (
     <ChakraProvider theme={currentTheme}>
-      <AuthProvider>
-        <OrganizationProvider>
-          <Routes>
-            <Route
-              path="admin/*"
-              element={
-                <ProtectedRoute>
-                  <AdminLayout
-                    theme={currentTheme}
-                    setTheme={setCurrentTheme}
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="auth/*" element={<AuthLayout />} />
-            <Route path="/" element={<Navigate to="/admin" replace />} />
-            <Route path="*" element={<Navigate to="/admin" replace />} />
-          </Routes>
-        </OrganizationProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <OrganizationProvider>
+            <Routes>
+              <Route
+                path="admin/*"
+                element={
+                  <ProtectedRoute>
+                    <AdminLayout
+                      theme={currentTheme}
+                      setTheme={setCurrentTheme}
+                    />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="auth/*" element={<AuthLayout />} />
+              <Route path="/" element={<Navigate to="/admin" replace />} />
+              <Route path="*" element={<Navigate to="/admin" replace />} />
+            </Routes>
+          </OrganizationProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </ChakraProvider>
   );
 }

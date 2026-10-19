@@ -20,15 +20,18 @@ import React from 'react';
 import { IoMdMoon, IoMdSunny } from 'react-icons/io';
 import routes from 'routes';
 import { useAuth } from 'contexts/AuthContext';
+import { useLanguage } from 'contexts/LanguageContext';
+import LanguageSwitcher from 'components/navbar/LanguageSwitcher';
 import { useNavigate } from 'react-router-dom';
 
 export default function HeaderLinks(props: { secondary: boolean }) {
 	const { user, signOut, userName, userSurname, isSuperAdmin } = useAuth();
+	const { t } = useLanguage();
 	const { secondary } = props;
 	const { colorMode, toggleColorMode } = useColorMode();
 	const navigate = useNavigate();
 
-	const fullName = `${userName ?? ''} ${userSurname ?? ''}`.trim() || user?.displayName || 'Kullanıcı';
+	const fullName = `${userName ?? ''} ${userSurname ?? ''}`.trim() || user?.displayName || t('Kullanıcı', 'User');
 
 	// Chakra Color Mode
 	const navbarIcon = useColorModeValue('gray.400', 'white');
@@ -48,6 +51,7 @@ export default function HeaderLinks(props: { secondary: boolean }) {
 			bg={menuBg}
 			flexWrap={secondary ? { base: 'wrap', md: 'nowrap' } : 'unset'}
 			p='10px'
+			gap='6px'
 			borderRadius='30px'
 			boxShadow={shadow}>
 			<SearchBar
@@ -57,10 +61,11 @@ export default function HeaderLinks(props: { secondary: boolean }) {
 					}
 					return 'unset';
 				}}
-				me='10px'
+				me='6px'
 				borderRadius='30px'
 			/>
 			<SidebarResponsive routes={routes} />
+			<LanguageSwitcher size='xs' />
 
 			<Button
 				variant='no-hover'
@@ -104,7 +109,7 @@ export default function HeaderLinks(props: { secondary: boolean }) {
 							fontSize='sm'
 							fontWeight='700'
 							color={textColor}>
-							👋&nbsp; Merhaba, {userName || fullName.split(' ')[0]}
+							👋&nbsp; {t('Merhaba', 'Hello')}, {userName || fullName.split(' ')[0]}
 						</Text>
 					</Flex>
 					<Flex flexDirection='column' p='10px'>
@@ -114,7 +119,7 @@ export default function HeaderLinks(props: { secondary: boolean }) {
 							borderRadius='8px'
 							px='14px'
 							onClick={() => navigate('/admin/profile')}>
-							<Text fontSize='sm'>Profil Ayarları</Text>
+							<Text fontSize='sm'>{t('Profil Ayarları', 'Profile Settings')}</Text>
 						</MenuItem>
 						{isSuperAdmin && (
 							<MenuItem
@@ -123,7 +128,7 @@ export default function HeaderLinks(props: { secondary: boolean }) {
 								borderRadius='8px'
 								px='14px'
 								onClick={() => navigate('/admin/settings')}>
-								<Text fontSize='sm'>Kurum & Rol Ayarları</Text>
+								<Text fontSize='sm'>{t('Kurum & Rol Ayarları', 'Company & Role Settings')}</Text>
 							</MenuItem>
 						)}
 						<MenuItem
@@ -133,7 +138,7 @@ export default function HeaderLinks(props: { secondary: boolean }) {
 							borderRadius='8px'
 							px='14px'
 							onClick={signOut}>
-							<Text fontSize='sm'>Çıkış Yap</Text>
+							<Text fontSize='sm'>{t('Çıkış Yap', 'Sign Out')}</Text>
 						</MenuItem>
 					</Flex>
 				</MenuList>

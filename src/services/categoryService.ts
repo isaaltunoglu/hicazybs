@@ -11,10 +11,14 @@ import {
     orderBy,
 } from 'firebase/firestore';
 import { getCurrentTenantScope, matchesTenantScope } from './tenantScope';
+import { DEMO_CATEGORIES, isDemoModeActive } from './demoData';
 
 const COLLECTION_NAME = 'categories';
 
 export const getAllCategories = async (): Promise<Category[]> => {
+    if (isDemoModeActive()) {
+        return DEMO_CATEGORIES.filter((c) => matchesTenantScope(c));
+    }
     try {
         const q = query(collection(db, COLLECTION_NAME), orderBy('name'));
         const querySnapshot = await getDocs(q);

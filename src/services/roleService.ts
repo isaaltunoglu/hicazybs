@@ -10,6 +10,7 @@ import {
     serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { isDemoModeActive } from './demoData';
 
 export interface RoleDefinition {
     id: string;
@@ -52,7 +53,7 @@ export const DEFAULT_ROLES: RoleDefinition[] = [
     },
     {
         id: 'default-member',
-        name: 'Personel',
+        name: 'Uzman / Mühendis',
         isSuperAdmin: false,
         isManager: false,
         isDefault: true,
@@ -76,6 +77,9 @@ export const LEGACY_MANAGER_ROLES = [
 ];
 
 export async function getAllRoles(companyId?: string | null): Promise<RoleDefinition[]> {
+    if (isDemoModeActive()) {
+        return DEFAULT_ROLES;
+    }
     try {
         const q = companyId
             ? query(collection(db, ROLES_COLLECTION), where('companyId', '==', companyId))

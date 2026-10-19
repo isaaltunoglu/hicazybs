@@ -49,11 +49,22 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
     const [orgSettings, setOrgSettings] = useState<OrganizationSettings>(DEFAULT_ORG_SETTINGS);
     const [roles, setRoles] = useState<RoleDefinition[]>(DEFAULT_ROLES);
     const [subTeams, setSubTeams] = useState<SubTeam[]>([]);
-    const [activeSubTeamId, setActiveSubTeamIdState] = useState<string>('all');
+    const [activeSubTeamId, setActiveSubTeamIdState] = useState<string>(() => {
+        try {
+            return localStorage.getItem('ybs_active_sub_team_id') || 'all';
+        } catch {
+            return 'all';
+        }
+    });
     const [loadingOrg, setLoadingOrg] = useState(true);
 
     const setActiveSubTeamId = useCallback(
         (id: string) => {
+            try {
+                localStorage.setItem('ybs_active_sub_team_id', id);
+            } catch {
+                // ignore
+            }
             setCurrentTenantScope({
                 companyId: companyId || 'default-company',
                 subTeamId: id,
@@ -63,9 +74,16 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
         [companyId]
     );
 
-    // Kullanıcının atandığı bir alt takım varsa varsayılan olarak onu seç
+    // Kullanıcının atandığı bir alt takım varsa veya kayıtlı seçim varsa senkronize et
     useEffect(() => {
-        const nextSubTeam = subTeamId || 'all';
+        const storedSubTeam = (() => {
+            try {
+                return localStorage.getItem('ybs_active_sub_team_id');
+            } catch {
+                return null;
+            }
+        })();
+        const nextSubTeam = subTeamId || storedSubTeam || 'all';
         setCurrentTenantScope({
             companyId: companyId || 'default-company',
             subTeamId: nextSubTeam,

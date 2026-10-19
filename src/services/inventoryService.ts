@@ -14,6 +14,7 @@ import {
     Timestamp,
 } from 'firebase/firestore';
 import { getCurrentTenantScope, matchesTenantScope } from './tenantScope';
+import { DEMO_INVENTORY, isDemoModeActive } from './demoData';
 
 const COLLECTION_NAME = 'inventory';
 
@@ -28,6 +29,9 @@ const convertDoc = (docSnap: any): InventoryItem => {
 };
 
 export const getAllItems = async (): Promise<InventoryItem[]> => {
+    if (isDemoModeActive()) {
+        return DEMO_INVENTORY.filter((item) => matchesTenantScope(item));
+    }
     try {
         const q = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);

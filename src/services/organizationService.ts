@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { DEMO_COMPANY, isDemoModeActive } from './demoData';
 
 export interface OrganizationSettings {
     organizationName: string;
@@ -25,6 +26,16 @@ export const DEFAULT_ORG_SETTINGS: OrganizationSettings = {
 export async function getOrganizationSettings(
     companyId?: string | null
 ): Promise<OrganizationSettings> {
+    if (isDemoModeActive()) {
+        return {
+            organizationName: DEMO_COMPANY.name,
+            organizationSubtitle: DEMO_COMPANY.subtitle,
+            logoUrl: DEMO_COMPANY.logoUrl,
+            workspaceLabel: DEMO_COMPANY.workspaceLabel,
+            footerText: DEMO_COMPANY.footerText,
+            supportEmail: DEMO_COMPANY.supportEmail,
+        };
+    }
     try {
         if (companyId && companyId !== 'default-company') {
             const companyRef = doc(db, 'companies', companyId);

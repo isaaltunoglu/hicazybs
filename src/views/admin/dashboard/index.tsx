@@ -22,6 +22,7 @@ import Card from 'components/card/Card';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from 'contexts/AuthContext';
 import { useOrganization } from 'contexts/OrganizationContext';
+import { useLanguage } from 'contexts/LanguageContext';
 
 export default function Dashboard() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -31,6 +32,7 @@ export default function Dashboard() {
 
     const { companyId } = useAuth();
     const { activeSubTeamId } = useOrganization();
+    const { language, t } = useLanguage();
 
     const brandColor = useColorModeValue('brand.500', 'white');
     const boxBg = useColorModeValue('secondaryGray.300', 'whiteAlpha.100');
@@ -67,7 +69,11 @@ export default function Dashboard() {
     const formatDate = (timestamp: any) => {
         if (!timestamp) return '';
         const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-        return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+        return date.toLocaleDateString(language === 'en' ? 'en-US' : 'tr-TR', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+        });
     };
 
     return (
@@ -82,7 +88,7 @@ export default function Dashboard() {
                             icon={<Icon w="32px" h="32px" as={MdInventory as any} color={brandColor} />}
                         />
                     }
-                    name="Toplam Öğe"
+                    name={t('Toplam Öğe', 'Total Items')}
                     value={String(totalItems)}
                 />
                 <MiniStatistics
@@ -94,7 +100,7 @@ export default function Dashboard() {
                             icon={<Icon w="32px" h="32px" as={MdTrendingUp as any} color={brandColor} />}
                         />
                     }
-                    name="Toplam Miktar"
+                    name={t('Toplam Miktar', 'Total Quantity')}
                     value={String(totalAmount)}
                 />
                 <MiniStatistics
@@ -106,7 +112,7 @@ export default function Dashboard() {
                             icon={<Icon w="32px" h="32px" as={MdCategory as any} color={brandColor} />}
                         />
                     }
-                    name="Kategoriler"
+                    name={t('Kategoriler', 'Categories')}
                     value={String(totalCategories)}
                 />
                 <MiniStatistics
@@ -118,7 +124,7 @@ export default function Dashboard() {
                             icon={<Icon w="32px" h="32px" as={MdLocationOn as any} color={brandColor} />}
                         />
                     }
-                    name="Konumlar"
+                    name={t('Konumlar', 'Locations')}
                     value={String(uniqueLocations)}
                 />
             </SimpleGrid>
@@ -129,7 +135,7 @@ export default function Dashboard() {
                     <Flex align="center" gap="8px">
                         <Icon as={MdAnnouncement as any} w="24px" h="24px" color={brandColor} />
                         <Text fontSize="xl" fontWeight="700" color={textColor}>
-                            Son Duyurular
+                            {t('Son Duyurular', 'Latest Announcements')}
                         </Text>
                     </Flex>
                     <Button
@@ -139,7 +145,7 @@ export default function Dashboard() {
                         onClick={() => navigate('/admin/announcements')}
                         borderRadius="10px"
                     >
-                        Tümünü Gör
+                        {t('Tümünü Gör', 'View All')}
                     </Button>
                 </Flex>
 
@@ -150,7 +156,7 @@ export default function Dashboard() {
                 ) : announcements.length === 0 ? (
                     <Card p="24px">
                         <Text color="gray.400" textAlign="center" fontSize="sm">
-                            Henüz duyuru bulunmamaktadır.
+                            {t('Henüz duyuru bulunmamaktadır.', 'No announcements yet.')}
                         </Text>
                     </Card>
                 ) : (

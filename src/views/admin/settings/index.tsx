@@ -39,6 +39,7 @@ import { MdAdd, MdEdit, MdDelete, MdBusiness, MdSecurity, MdSave, MdGroups } fro
 import Card from 'components/card/Card';
 import { useAuth } from 'contexts/AuthContext';
 import { useOrganization } from 'contexts/OrganizationContext';
+import { useLanguage } from 'contexts/LanguageContext';
 import { updateOrganizationSettings, OrganizationSettings } from 'services/organizationService';
 import {
     RoleDefinition,
@@ -53,13 +54,13 @@ import {
 } from 'services/companyService';
 
 const ROLE_COLORS = [
-    { value: 'purple', label: 'Mor' },
-    { value: 'blue', label: 'Mavi' },
-    { value: 'teal', label: 'Turkuaz' },
-    { value: 'green', label: 'Yeşil' },
-    { value: 'orange', label: 'Turuncu' },
-    { value: 'red', label: 'Kırmızı' },
-    { value: 'gray', label: 'Gri' },
+    { value: 'purple', label: 'Mor / Purple' },
+    { value: 'blue', label: 'Mavi / Blue' },
+    { value: 'teal', label: 'Turkuaz / Teal' },
+    { value: 'green', label: 'Yeşil / Green' },
+    { value: 'orange', label: 'Turuncu / Orange' },
+    { value: 'red', label: 'Kırmızı / Red' },
+    { value: 'gray', label: 'Gri / Gray' },
 ];
 
 export default function OrganizationSettingsView() {
@@ -74,6 +75,7 @@ export default function OrganizationSettingsView() {
         refreshRoles,
         refreshSubTeams,
     } = useOrganization();
+    const { t } = useLanguage();
     const toast = useToast();
 
     const textColor = useColorModeValue('secondaryGray.900', 'white');
@@ -108,9 +110,9 @@ export default function OrganizationSettingsView() {
             <Box pt={{ base: '130px', md: '80px', xl: '80px' }}>
                 <Card>
                     <Text color={textColor} fontSize="xl" fontWeight="700">
-                        Yetkisiz Erişim
+                        {t('Yetkisiz Erişim', 'Unauthorized Access')}
                     </Text>
-                    <Text mt="2">Bu sayfayı görüntüleme yetkiniz yok.</Text>
+                    <Text mt="2">{t('Bu sayfayı görüntüleme yetkiniz yok.', 'You do not have permission to view this page.')}</Text>
                 </Card>
             </Box>
         );
@@ -118,7 +120,7 @@ export default function OrganizationSettingsView() {
 
     const handleSaveOrganization = async () => {
         if (!orgForm.organizationName.trim()) {
-            toast({ title: 'Kurum adı zorunludur', status: 'warning', duration: 2500 });
+            toast({ title: t('Kurum adı zorunludur', 'Company name is required'), status: 'warning', duration: 2500 });
             return;
         }
         setSavingOrg(true);
@@ -135,10 +137,10 @@ export default function OrganizationSettingsView() {
                 companyId
             );
             await refreshOrganization();
-            toast({ title: 'Kurum ayarları kaydedildi', status: 'success', duration: 2500 });
+            toast({ title: t('Kurum ayarları kaydedildi', 'Company settings saved'), status: 'success', duration: 2500 });
         } catch (err) {
             console.error('Error saving organization settings:', err);
-            toast({ title: 'Kayıt sırasında hata oluştu', status: 'error', duration: 3000 });
+            toast({ title: t('Kayıt sırasında hata oluştu', 'Error saving settings'), status: 'error', duration: 3000 });
         } finally {
             setSavingOrg(false);
         }
@@ -156,27 +158,27 @@ export default function OrganizationSettingsView() {
             setNewSubTeamName('');
             setNewSubTeamDesc('');
             await refreshSubTeams();
-            toast({ title: 'Alt takım / çalışma alanı eklendi', status: 'success', duration: 2000 });
+            toast({ title: t('Alt takım / çalışma alanı eklendi', 'Sub-team / workspace added'), status: 'success', duration: 2000 });
         } catch (err) {
             console.error(err);
-            toast({ title: 'Alt takım eklenemedi', status: 'error', duration: 3000 });
+            toast({ title: t('Alt takım eklenemedi', 'Failed to add sub-team'), status: 'error', duration: 3000 });
         } finally {
             setAddingSubTeam(false);
         }
     };
 
     const handleDeleteSubTeam = async (id: string, name: string) => {
-        if (!window.confirm(`"${name}" alt takımını / çalışma alanını silmek istediğinize emin misiniz?`)) return;
+        if (!window.confirm(t(`"${name}" alt takımını / çalışma alanını silmek istediğinize emin misiniz?`, `Are you sure you want to delete "${name}"?`))) return;
         try {
             await deleteSubTeam(id);
             if (activeSubTeamId === id) {
                 setActiveSubTeamId('all');
             }
             await refreshSubTeams();
-            toast({ title: 'Alt takım silindi', status: 'info', duration: 2000 });
+            toast({ title: t('Alt takım silindi', 'Sub-team deleted'), status: 'info', duration: 2000 });
         } catch (err) {
             console.error(err);
-            toast({ title: 'Silme hatası', status: 'error', duration: 3000 });
+            toast({ title: t('Silme hatası', 'Delete error'), status: 'error', duration: 3000 });
         }
     };
 
@@ -202,7 +204,7 @@ export default function OrganizationSettingsView() {
 
     const handleSaveRole = async () => {
         if (!roleName.trim()) {
-            toast({ title: 'Rol adı zorunludur', status: 'warning', duration: 2000 });
+            toast({ title: t('Rol adı zorunludur', 'Role name is required'), status: 'warning', duration: 2000 });
             return;
         }
         setSavingRole(true);
@@ -218,7 +220,7 @@ export default function OrganizationSettingsView() {
 
             if (editingRole && !editingRole.id.startsWith('default-')) {
                 await updateRole(editingRole.id, payload);
-                toast({ title: 'Rol güncellendi', status: 'success', duration: 2000 });
+                toast({ title: t('Rol güncellendi', 'Role updated'), status: 'success', duration: 2000 });
             } else if (editingRole && editingRole.id.startsWith('default-')) {
                 for (const r of roles) {
                     if (r.id === editingRole.id) {
@@ -234,7 +236,7 @@ export default function OrganizationSettingsView() {
                         });
                     }
                 }
-                toast({ title: 'Rol güncellendi', status: 'success', duration: 2000 });
+                toast({ title: t('Rol güncellendi', 'Role updated'), status: 'success', duration: 2000 });
             } else {
                 const hasOnlyDefaults = roles.every((r) => r.id.startsWith('default-'));
                 if (hasOnlyDefaults) {
@@ -250,14 +252,14 @@ export default function OrganizationSettingsView() {
                     }
                 }
                 await createRole(payload);
-                toast({ title: 'Yeni rol eklendi', status: 'success', duration: 2000 });
+                toast({ title: t('Yeni rol eklendi', 'New role added'), status: 'success', duration: 2000 });
             }
 
             await refreshRoles();
             onClose();
         } catch (err) {
             console.error('Error saving role:', err);
-            toast({ title: 'Rol kaydedilemedi', status: 'error', duration: 3000 });
+            toast({ title: t('Rol kaydedilemedi', 'Failed to save role'), status: 'error', duration: 3000 });
         } finally {
             setSavingRole(false);
         }
@@ -266,21 +268,21 @@ export default function OrganizationSettingsView() {
     const handleDeleteRole = async (role: RoleDefinition) => {
         if (role.id.startsWith('default-')) {
             toast({
-                title: 'Varsayılan rol',
-                description: 'Önce yeni bir özel rol ekleyerek veya düzenleyerek veritabanı rollerini etkinleştirin.',
+                title: t('Varsayılan rol', 'Default role'),
+                description: t('Önce yeni bir özel rol ekleyerek veya düzenleyerek veritabanı rollerini etkinleştirin.', 'Add or edit a custom role first to persist custom roles.'),
                 status: 'info',
                 duration: 3000,
             });
             return;
         }
-        if (!window.confirm(`"${role.name}" rolünü silmek istediğinize emin misiniz?`)) return;
+        if (!window.confirm(t(`"${role.name}" rolünü silmek istediğinize emin misiniz?`, `Are you sure you want to delete "${role.name}"?`))) return;
         try {
             await deleteRole(role.id);
             await refreshRoles();
-            toast({ title: 'Rol silindi', status: 'info', duration: 2000 });
+            toast({ title: t('Rol silindi', 'Role deleted'), status: 'info', duration: 2000 });
         } catch (err) {
             console.error('Error deleting role:', err);
-            toast({ title: 'Silme hatası', status: 'error', duration: 3000 });
+            toast({ title: t('Silme hatası', 'Delete error'), status: 'error', duration: 3000 });
         }
     };
 
@@ -292,10 +294,13 @@ export default function OrganizationSettingsView() {
                     <Icon as={MdGroups as any} w="28px" h="28px" color="brand.500" />
                     <Box>
                         <Text color={textColor} fontSize="xl" fontWeight="700">
-                            Alt Takımlar ve Çalışma Alanları
+                            {t('Alt Takımlar ve Çalışma Alanları', 'Sub-Teams & Workspaces')}
                         </Text>
                         <Text fontSize="xs" color="gray.400">
-                            Şirketiniz altında birden fazla alt takım veya çalışma alanı (şube, ofis, atölye, birim) açıp süreçleri ayırabilir veya tek şirket olarak kullanabilirsiniz.
+                            {t(
+                                'Şirketiniz altında birden fazla alt takım veya çalışma alanı (şube, ofis, atölye, birim) açıp süreçleri ayırabilir veya tek şirket olarak kullanabilirsiniz.',
+                                'Create multiple sub-teams or workspaces (branches, offices, labs, units) under your company to isolate operations, or operate as a single unified company.'
+                            )}
                         </Text>
                     </Box>
                 </Flex>
@@ -303,23 +308,23 @@ export default function OrganizationSettingsView() {
                 <SimpleGrid columns={{ base: 1, md: 3 }} spacing="12px" mb="20px">
                     <FormControl>
                         <FormLabel fontSize="xs" fontWeight="600">
-                            Yeni Alt Takım / Çalışma Alanı Adı
+                            {t('Yeni Alt Takım / Çalışma Alanı Adı', 'New Sub-Team / Workspace Name')}
                         </FormLabel>
                         <Input
                             value={newSubTeamName}
                             onChange={(e) => setNewSubTeamName(e.target.value)}
-                            placeholder="Örn: Ar-Ge Takımı, Merkez Ofis, Üretim Alanı..."
+                            placeholder={t('Örn: Ar-Ge Takımı, Merkez Ofis, Üretim Alanı...', 'e.g. R&D Team, Main Office, Production Area...')}
                             borderRadius="12px"
                         />
                     </FormControl>
                     <FormControl>
                         <FormLabel fontSize="xs" fontWeight="600">
-                            Açıklama (İsteğe Bağlı)
+                            {t('Açıklama (İsteğe Bağlı)', 'Description (Optional)')}
                         </FormLabel>
                         <Input
                             value={newSubTeamDesc}
                             onChange={(e) => setNewSubTeamDesc(e.target.value)}
-                            placeholder="Kısa açıklama..."
+                            placeholder={t('Kısa açıklama...', 'Short description...')}
                             borderRadius="12px"
                         />
                     </FormControl>
@@ -333,7 +338,7 @@ export default function OrganizationSettingsView() {
                             isLoading={addingSubTeam}
                             isDisabled={!newSubTeamName.trim()}
                         >
-                            Alt Takım / Alan Ekle
+                            {t('Alt Takım / Alan Ekle', 'Add Sub-Team / Area')}
                         </Button>
                     </Flex>
                 </SimpleGrid>
@@ -341,17 +346,20 @@ export default function OrganizationSettingsView() {
                 {subTeams.length === 0 ? (
                     <Box p="16px" borderRadius="12px" border="1px dashed" borderColor={borderColor}>
                         <Text fontSize="sm" color="gray.400" textAlign="center">
-                            Henüz alt takım tanımlanmadı. Şirketiniz şu an <b>Tekil / Genel Şirket</b> yapısında çalışıyor. İsterseniz yukarıdan alt takımlar ekleyebilirsiniz.
+                            {t(
+                                'Henüz alt takım tanımlanmadı. Şirketiniz şu an Tekil / Genel Şirket yapısında çalışıyor. İsterseniz yukarıdan alt takımlar ekleyebilirsiniz.',
+                                'No sub-teams defined yet. Your company is currently operating in Single / General Company mode. You can add sub-teams above.'
+                            )}
                         </Text>
                     </Box>
                 ) : (
                     <Table variant="simple" size="sm">
                         <Thead>
                             <Tr>
-                                <Th borderColor={borderColor}>Alt Takım / Alan Adı</Th>
-                                <Th borderColor={borderColor}>Açıklama</Th>
-                                <Th borderColor={borderColor}>QR Kodu Anahtarı</Th>
-                                <Th borderColor={borderColor} textAlign="right">İşlem</Th>
+                                <Th borderColor={borderColor}>{t('Alt Takım / Alan Adı', 'Sub-Team / Area Name')}</Th>
+                                <Th borderColor={borderColor}>{t('Açıklama', 'Description')}</Th>
+                                <Th borderColor={borderColor}>{t('QR Kodu Anahtarı', 'QR Code Secret')}</Th>
+                                <Th borderColor={borderColor} textAlign="right">{t('İşlem', 'Actions')}</Th>
                             </Tr>
                         </Thead>
                         <Tbody>
@@ -360,7 +368,7 @@ export default function OrganizationSettingsView() {
                                     <Td borderColor={borderColor} fontWeight="700" color={textColor}>
                                         {team.name}
                                         {activeSubTeamId === team.id && (
-                                            <Badge ml="8px" colorScheme="green">Seçili</Badge>
+                                            <Badge ml="8px" colorScheme="green">{t('Seçili', 'Active')}</Badge>
                                         )}
                                     </Td>
                                     <Td borderColor={borderColor}>{team.description || '-'}</Td>
@@ -375,10 +383,10 @@ export default function OrganizationSettingsView() {
                                                 colorScheme="brand"
                                                 onClick={() => setActiveSubTeamId(team.id)}
                                             >
-                                                Bu Alana Geç
+                                                {t('Bu Alana Geç', 'Switch to Area')}
                                             </Button>
                                             <IconButton
-                                                aria-label="Sil"
+                                                aria-label="Delete"
                                                 icon={<Icon as={MdDelete as any} />}
                                                 size="xs"
                                                 colorScheme="red"
@@ -401,10 +409,10 @@ export default function OrganizationSettingsView() {
                         <Icon as={MdBusiness as any} w="26px" h="26px" color="brand.500" />
                         <Box>
                             <Text color={textColor} fontSize="xl" fontWeight="700">
-                                Şirket ve Platform Kimliği
+                                {t('Şirket ve Platform Kimliği', 'Company & Platform Identity')}
                             </Text>
                             <Text fontSize="xs" color="gray.400">
-                                Şirket adı, logo, çalışma alanı adı ve altbilgi yapılandırması
+                                {t('Şirket adı, logo, çalışma alanı adı ve altbilgi yapılandırması', 'Company name, logo, workspace label, and footer configuration')}
                             </Text>
                         </Box>
                     </Flex>
@@ -412,35 +420,35 @@ export default function OrganizationSettingsView() {
                     <VStack spacing="16px" align="stretch">
                         <FormControl isRequired>
                             <FormLabel fontWeight="600" fontSize="sm">
-                                Şirket / Kurum Adı
+                                {t('Şirket / Kurum Adı', 'Company / Organization Name')}
                             </FormLabel>
                             <Input
                                 value={orgForm.organizationName}
                                 onChange={(e) =>
                                     setOrgForm((prev) => ({ ...prev, organizationName: e.target.value }))
                                 }
-                                placeholder="Örn: Acme Teknoloji A.Ş."
+                                placeholder={t('Örn: Acme Teknoloji A.Ş.', 'e.g., Acme Technologies Inc.')}
                                 borderRadius="12px"
                             />
                         </FormControl>
 
                         <FormControl>
                             <FormLabel fontWeight="600" fontSize="sm">
-                                Sistem Alt Başlığı
+                                {t('Sistem Alt Başlığı', 'System Subtitle')}
                             </FormLabel>
                             <Input
                                 value={orgForm.organizationSubtitle}
                                 onChange={(e) =>
                                     setOrgForm((prev) => ({ ...prev, organizationSubtitle: e.target.value }))
                                 }
-                                placeholder="Örn: Yönetim Bilişim Sistemi"
+                                placeholder={t('Örn: Yönetim Bilişim Sistemi', 'e.g., Management Information System')}
                                 borderRadius="12px"
                             />
                         </FormControl>
 
                         <FormControl>
                             <FormLabel fontWeight="600" fontSize="sm">
-                                Kurum Logo URL (İsteğe Bağlı)
+                                {t('Kurum Logo URL (İsteğe Bağlı)', 'Organization Logo URL (Optional)')}
                             </FormLabel>
                             <Input
                                 value={orgForm.logoUrl}
@@ -454,7 +462,7 @@ export default function OrganizationSettingsView() {
                                 <Flex mt="10px" p="10px" border="1px dashed" borderColor={borderColor} borderRadius="10px" justify="center">
                                     <Image
                                         src={orgForm.logoUrl}
-                                        alt="Logo Önizleme"
+                                        alt="Logo Preview"
                                         maxH="48px"
                                         objectFit="contain"
                                     />
@@ -464,42 +472,42 @@ export default function OrganizationSettingsView() {
 
                         <FormControl>
                             <FormLabel fontWeight="600" fontSize="sm">
-                                Giriş/Çıkış Alanı Etiketi
+                                {t('Giriş/Çıkış Alanı Etiketi', 'Check-in / Workspace Label')}
                             </FormLabel>
                             <Input
                                 value={orgForm.workspaceLabel}
                                 onChange={(e) =>
                                     setOrgForm((prev) => ({ ...prev, workspaceLabel: e.target.value }))
                                 }
-                                placeholder="Örn: Çalışma Alanı, Ofis, Şube, Kampüs"
+                                placeholder={t('Örn: Çalışma Alanı, Ofis, Şube, Kampüs', 'e.g., Workspace, Office, Branch, Campus')}
                                 borderRadius="12px"
                             />
                         </FormControl>
 
                         <FormControl>
                             <FormLabel fontWeight="600" fontSize="sm">
-                                Altbilgi (Footer) Kurum Metni
+                                {t('Altbilgi (Footer) Kurum Metni', 'Footer Organization Text')}
                             </FormLabel>
                             <Input
                                 value={orgForm.footerText}
                                 onChange={(e) =>
                                     setOrgForm((prev) => ({ ...prev, footerText: e.target.value }))
                                 }
-                                placeholder="Örn: Acme Teknoloji A.Ş. • Tüm Hakları Saklıdır"
+                                placeholder={t('Örn: Acme Teknoloji A.Ş. • Tüm Hakları Saklıdır', 'e.g., Acme Technologies Inc. • All Rights Reserved')}
                                 borderRadius="12px"
                             />
                         </FormControl>
 
                         <FormControl>
                             <FormLabel fontWeight="600" fontSize="sm">
-                                Destek E-posta Adresi (İsteğe Bağlı)
+                                {t('Destek E-posta Adresi (İsteğe Bağlı)', 'Support Email Address (Optional)')}
                             </FormLabel>
                             <Input
                                 value={orgForm.supportEmail}
                                 onChange={(e) =>
                                     setOrgForm((prev) => ({ ...prev, supportEmail: e.target.value }))
                                 }
-                                placeholder="destek@sirketiniz.com"
+                                placeholder="support@company.com"
                                 borderRadius="12px"
                             />
                         </FormControl>
@@ -512,7 +520,7 @@ export default function OrganizationSettingsView() {
                             isLoading={savingOrg}
                             mt="8px"
                         >
-                            Şirket Ayarlarını Kaydet
+                            {t('Şirket Ayarlarını Kaydet', 'Save Company Settings')}
                         </Button>
                     </VStack>
                 </Card>
@@ -524,10 +532,10 @@ export default function OrganizationSettingsView() {
                             <Icon as={MdSecurity as any} w="26px" h="26px" color="brand.500" />
                             <Box>
                                 <Text color={textColor} fontSize="xl" fontWeight="700">
-                                    Dinamik Rol ve Yetkiler
+                                    {t('Dinamik Rol ve Yetkiler', 'Dynamic Roles & Permissions')}
                                 </Text>
                                 <Text fontSize="xs" color="gray.400">
-                                    Şirketinize özel ünvan, rol ve yetki seviyeleri tanımlayın
+                                    {t('Şirketinize özel ünvan, rol ve yetki seviyeleri tanımlayın', 'Define custom titles, roles, and permission levels for your company')}
                                 </Text>
                             </Box>
                         </Flex>
@@ -538,7 +546,7 @@ export default function OrganizationSettingsView() {
                             borderRadius="12px"
                             onClick={openAddRoleModal}
                         >
-                            Yeni Rol Ekle
+                            {t('Yeni Rol Ekle', 'Add New Role')}
                         </Button>
                     </Flex>
 
@@ -546,10 +554,10 @@ export default function OrganizationSettingsView() {
                         <Table variant="simple" size="sm">
                             <Thead>
                                 <Tr>
-                                    <Th borderColor={borderColor}>Rol Adı</Th>
-                                    <Th borderColor={borderColor}>Yetki Seviyesi</Th>
+                                    <Th borderColor={borderColor}>{t('Rol Adı', 'Role Name')}</Th>
+                                    <Th borderColor={borderColor}>{t('Yetki Seviyesi', 'Access Level')}</Th>
                                     <Th borderColor={borderColor} textAlign="right">
-                                        İşlem
+                                        {t('İşlem', 'Actions')}
                                     </Th>
                                 </Tr>
                             </Thead>
@@ -563,23 +571,23 @@ export default function OrganizationSettingsView() {
                                                 </Badge>
                                                 {r.isDefault && (
                                                     <Badge colorScheme="green" variant="outline" fontSize="10px">
-                                                        Varsayılan
+                                                        {t('Varsayılan', 'Default')}
                                                     </Badge>
                                                 )}
                                             </Flex>
                                         </Td>
                                         <Td borderColor={borderColor}>
                                             {r.isSuperAdmin ? (
-                                                <Badge colorScheme="purple">Süper Yönetici (Tam Yetki)</Badge>
+                                                <Badge colorScheme="purple">{t('Süper Yönetici (Tam Yetki)', 'Super Admin (Full Access)')}</Badge>
                                             ) : r.isManager ? (
-                                                <Badge colorScheme="blue">Yönetici / Birim Yetkilisi</Badge>
+                                                <Badge colorScheme="blue">{t('Yönetici / Birim Yetkilisi', 'Manager / Team Lead')}</Badge>
                                             ) : (
-                                                <Badge colorScheme="gray">Standart Kullanıcı</Badge>
+                                                <Badge colorScheme="gray">{t('Standart Kullanıcı', 'Standard Member')}</Badge>
                                             )}
                                         </Td>
                                         <Td borderColor={borderColor} textAlign="right">
                                             <Flex justify="flex-end" gap="4px">
-                                                <Tooltip label="Düzenle">
+                                                <Tooltip label={t('Düzenle', 'Edit')}>
                                                     <IconButton
                                                         aria-label="Edit Role"
                                                         icon={<Icon as={MdEdit as any} />}
@@ -588,7 +596,7 @@ export default function OrganizationSettingsView() {
                                                         onClick={() => openEditRoleModal(r)}
                                                     />
                                                 </Tooltip>
-                                                <Tooltip label="Sil">
+                                                <Tooltip label={t('Sil', 'Delete')}>
                                                     <IconButton
                                                         aria-label="Delete Role"
                                                         icon={<Icon as={MdDelete as any} />}
@@ -613,26 +621,26 @@ export default function OrganizationSettingsView() {
                 <ModalOverlay />
                 <ModalContent bg={modalBg} borderRadius="20px">
                     <ModalHeader>
-                        {editingRole ? 'Rolü Düzenle' : 'Yeni Rol Tanımla'}
+                        {editingRole ? t('Rolü Düzenle', 'Edit Role') : t('Yeni Rol Tanımla', 'Define New Role')}
                     </ModalHeader>
                     <ModalCloseButton />
                     <ModalBody>
                         <VStack spacing="16px" align="stretch">
                             <FormControl isRequired>
                                 <FormLabel fontWeight="600" fontSize="sm">
-                                    Rol / Ünvan Adı
+                                    {t('Rol / Ünvan Adı', 'Role / Title Name')}
                                 </FormLabel>
                                 <Input
                                     value={roleName}
                                     onChange={(e) => setRoleName(e.target.value)}
-                                    placeholder="Örn: Proje Yöneticisi, İK Uzmanı, Teknisyen..."
+                                    placeholder={t('Örn: Proje Yöneticisi, İK Uzmanı, Teknisyen...', 'e.g., Project Manager, HR Specialist, Technician...')}
                                     borderRadius="12px"
                                 />
                             </FormControl>
 
                             <FormControl>
                                 <FormLabel fontWeight="600" fontSize="sm">
-                                    Rozet Rengi
+                                    {t('Rozet Rengi', 'Badge Color')}
                                 </FormLabel>
                                 <Select
                                     value={roleColor}
@@ -652,10 +660,10 @@ export default function OrganizationSettingsView() {
                             <FormControl display="flex" alignItems="center" justifyContent="space-between">
                                 <Box pr="12px">
                                     <FormLabel mb="0" fontWeight="600" fontSize="sm">
-                                        Süper Yönetici Yetkisi
+                                        {t('Süper Yönetici Yetkisi', 'Super Admin Access')}
                                     </FormLabel>
                                     <Text fontSize="xs" color="gray.400">
-                                        Kullanıcı davetleri, departmanlar, alt takımlar ve şirket ayarlarına tam erişim
+                                        {t('Kullanıcı davetleri, departmanlar, alt takımlar ve şirket ayarlarına tam erişim', 'Full access to user invitations, departments, sub-teams, and company settings')}
                                     </Text>
                                 </Box>
                                 <Switch
@@ -671,10 +679,10 @@ export default function OrganizationSettingsView() {
                             <FormControl display="flex" alignItems="center" justifyContent="space-between">
                                 <Box pr="12px">
                                     <FormLabel mb="0" fontWeight="600" fontSize="sm">
-                                        Yönetim Yetkisi (Birim / Operasyon)
+                                        {t('Yönetim Yetkisi (Birim / Operasyon)', 'Management Access (Team / Operations)')}
                                     </FormLabel>
                                     <Text fontSize="xs" color="gray.400">
-                                        Görev atama, envanter/kategori yönetimi, duyuru, bağlantı ve mesai ayarları
+                                        {t('Görev atama, envanter/kategori yönetimi, duyuru, bağlantı ve mesai ayarları', 'Task assignment, inventory/category management, announcements, links, and attendance settings')}
                                     </Text>
                                 </Box>
                                 <Switch
@@ -688,10 +696,10 @@ export default function OrganizationSettingsView() {
                             <FormControl display="flex" alignItems="center" justifyContent="space-between">
                                 <Box pr="12px">
                                     <FormLabel mb="0" fontWeight="600" fontSize="sm">
-                                        Varsayılan Yeni Üye Rolü
+                                        {t('Varsayılan Yeni Üye Rolü', 'Default New Member Role')}
                                     </FormLabel>
                                     <Text fontSize="xs" color="gray.400">
-                                        Davet ve onay ekranında yeni çalışanlar için varsayılan olarak seçilir
+                                        {t('Davet ve onay ekranında yeni çalışanlar için varsayılan olarak seçilir', 'Selected by default for new employees in the invitation & approval screen')}
                                     </Text>
                                 </Box>
                                 <Switch
@@ -704,7 +712,7 @@ export default function OrganizationSettingsView() {
                     </ModalBody>
                     <ModalFooter gap="8px">
                         <Button variant="ghost" onClick={onClose} borderRadius="12px">
-                            İptal
+                            {t('İptal', 'Cancel')}
                         </Button>
                         <Button
                             colorScheme="brand"
@@ -712,7 +720,7 @@ export default function OrganizationSettingsView() {
                             isLoading={savingRole}
                             borderRadius="12px"
                         >
-                            Kaydet
+                            {t('Kaydet', 'Save')}
                         </Button>
                     </ModalFooter>
                 </ModalContent>

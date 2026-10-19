@@ -11,6 +11,7 @@ import {
     serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { DEMO_INVITATIONS, isDemoModeActive } from './demoData';
 
 export interface Invitation {
     key: string;
@@ -78,6 +79,11 @@ export async function createInvitation(data: {
         createdAt: serverTimestamp(),
     };
 
+    if (isDemoModeActive()) {
+        DEMO_INVITATIONS.unshift(invitation);
+        return invitation;
+    }
+
     await setDoc(doc(db, 'invitations', key), invitation);
     return invitation;
 }
@@ -85,6 +91,9 @@ export async function createInvitation(data: {
 export async function getInvitationByKey(rawKey: string): Promise<Invitation | null> {
     const cleanKey = rawKey.trim().toUpperCase();
     if (!cleanKey) return null;
+    const demoMatch = DEMO_INVITATIONS.find((i) => i.key === cleanKey);
+    if (demoMatch) return demoMatch;
+    if (isDemoModeActive()) return DEMO_INVITATIONS[0] || null;
     try {
         const snap = await getDoc(doc(db, 'invitations', cleanKey));
         if (snap.exists()) {
@@ -99,6 +108,7 @@ export async function getInvitationByKey(rawKey: string): Promise<Invitation | n
 
 export async function getCompanyInvitations(companyId: string): Promise<Invitation[]> {
     if (!companyId) return [];
+    if (isDemoModeActive()) return [...DEMO_INVITATIONS];
     try {
         const q = query(collection(db, 'invitations'), where('companyId', '==', companyId));
         const snap = await getDocs(q);

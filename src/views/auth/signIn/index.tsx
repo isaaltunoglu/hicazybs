@@ -11,15 +11,19 @@ import {
   useToast,
   Icon,
   Image,
+  Divider,
+  SimpleGrid,
 } from '@chakra-ui/react';
 import DefaultAuth from 'layouts/auth/Default';
 import illustration from 'assets/img/auth/login_bg.png';
 import { FcGoogle } from 'react-icons/fc';
-import { MdDashboardCustomize, MdVpnKey } from 'react-icons/md';
+import { MdDashboardCustomize, MdVpnKey, MdPlayCircleOutline, MdBusiness } from 'react-icons/md';
 import { auth, googleProvider, signInWithPopup, db } from '../../../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from 'contexts/AuthContext';
 import { useOrganization } from 'contexts/OrganizationContext';
+import { useLanguage } from 'contexts/LanguageContext';
+import LanguageSwitcher from 'components/navbar/LanguageSwitcher';
 
 function SignIn() {
   const textColor = useColorModeValue('navy.700', 'white');
@@ -37,15 +41,20 @@ function SignIn() {
   );
   const navigate = useNavigate();
   const toast = useToast();
-  const { user, refreshUserProfile } = useAuth();
+  const { user, isApproved, refreshUserProfile, enableDemoMode } = useAuth();
   const { orgSettings } = useOrganization();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
-      checkUserStatus(user.uid);
+      if (isApproved) {
+        navigate('/admin/default', { replace: true });
+      } else {
+        checkUserStatus(user.uid);
+      }
     }
-  }, [user]);
+  }, [user, isApproved]);
 
   const checkUserStatus = async (uid: string) => {
     try {
@@ -53,12 +62,10 @@ function SignIn() {
       if (approvedDoc.exists()) {
         navigate('/admin/default', { replace: true });
       } else {
-        // Linksiz giriş yapan ve henüz bir şirkette olmayan kullanıcıya
-        // "Şirkete Katıl (Key ile)" veya "Şirket Aç" seçeneklerini göster
         navigate('/auth/onboarding', { replace: true });
       }
     } catch (err) {
-      console.error('Approval check error:', err);
+      navigate('/auth/onboarding', { replace: true });
     }
   };
 
@@ -72,8 +79,8 @@ function SignIn() {
       if (approvedDoc.exists()) {
         await refreshUserProfile();
         toast({
-          title: 'Giriş Başarılı',
-          description: 'Yönetim paneline yönlendiriliyorsunuz...',
+          title: t('Giriş Başarılı', 'Sign-In Successful'),
+          description: t('Yönetim paneline yönlendiriliyorsunuz...', 'Redirecting to dashboard...'),
           status: 'success',
           duration: 2000,
         });
@@ -82,14 +89,13 @@ function SignIn() {
         return;
       }
 
-      // Kullanıcı henüz bir şirkete kayıtlı değilse -> Şirket Aç veya Şirkete Katıl ekranına yönlendir
       navigate('/auth/onboarding', { replace: true });
     } catch (error: any) {
       console.error('Google sign-in error:', error);
       if (error.code !== 'auth/popup-closed-by-user') {
         toast({
-          title: 'Hata',
-          description: 'Giriş yapılırken bir hata oluştu.',
+          title: t('Hata', 'Error'),
+          description: t('Giriş yapılırken bir hata oluştu.', 'An error occurred while signing in.'),
           status: 'error',
           duration: 5000,
         });
@@ -110,10 +116,10 @@ function SignIn() {
         justifyContent="center"
         mb={{ base: '30px', md: '60px' }}
         px={{ base: '25px', md: '0px' }}
-        mt={{ base: '40px', md: '14vh' }}
+        mt={{ base: '40px', md: '10vh' }}
         flexDirection="column"
       >
-        <Box me="auto">
+        <Flex w="100%" justify="space-between" align="center" mb="20px">
           {orgSettings.logoUrl ? (
             <Image
               src={orgSettings.logoUrl}
@@ -121,10 +127,9 @@ function SignIn() {
               maxW="180px"
               maxH="64px"
               objectFit="contain"
-              mb="24px"
             />
           ) : (
-            <Flex align="center" gap="12px" mb="24px">
+            <Flex align="center" gap="12px">
               <Flex
                 w="44px"
                 h="44px"
@@ -148,11 +153,18 @@ function SignIn() {
               </Box>
             </Flex>
           )}
+          <LanguageSwitcher />
+        </Flex>
+
+        <Box me="auto">
           <Heading color={textColor} fontSize="36px" mb="10px">
-            Giriş Yap
+            {t('Giriş Yap', 'Sign In')}
           </Heading>
-          <Text mb="36px" ms="4px" color={textColorSecondary} fontWeight="400" fontSize="md">
-            Şirketinize erişmek, yeni şirket açmak veya davet anahtarıyla katılmak için Google ile devam edin
+          <Text mb="32px" ms="4px" color={textColorSecondary} fontWeight="400" fontSize="md" maxW="420px">
+            {t(
+              'Şirketinize erişmek, yeni şirket açmak veya davet anahtarıyla katılmak için devam edin',
+              'Continue to access your company, create a new company, or join with an invitation key'
+            )}
           </Text>
         </Box>
         <Flex
@@ -169,22 +181,22 @@ function SignIn() {
           <Button
             fontSize="sm"
             me="0px"
-            mb="16px"
+            mb="14px"
             py="15px"
             h="50px"
             borderRadius="16px"
             bg={googleBg}
             color={googleText}
-            fontWeight="500"
+            fontWeight="600"
             _hover={googleHover}
             _active={googleActive}
             _focus={googleActive}
             onClick={handleGoogleSignIn}
             isLoading={loading}
-            loadingText="Giriş yapılıyor..."
+            loadingText={t('Giriş yapılıyor...', 'Signing in...')}
           >
             <Icon as={FcGoogle as any} w="20px" h="20px" me="10px" />
-            Google ile Giriş Yap / Başla
+            {t('Google ile Giriş Yap / Başla', 'Sign In / Start with Google')}
           </Button>
 
           <NavLink to="/auth/invite">
@@ -197,9 +209,44 @@ function SignIn() {
               mb="20px"
               leftIcon={<Icon as={MdVpnKey as any} />}
             >
-              Davet Anahtarı (Key) ile Kaydol
+              {t('Davet Anahtarı (Key) ile Kaydol', 'Register with Invitation Key')}
             </Button>
           </NavLink>
+
+          <Divider mb="16px" />
+          <Text fontSize="xs" color="gray.400" fontWeight="700" mb="10px" textTransform="uppercase">
+            {t('Hızlı Önizleme & Demo Modu', 'Quick Preview & Live Demo')}
+          </Text>
+          <SimpleGrid columns={{ base: 1, sm: 2 }} spacing="10px">
+            <Button
+              size="sm"
+              colorScheme="brand"
+              variant="solid"
+              borderRadius="12px"
+              h="40px"
+              leftIcon={<Icon as={MdPlayCircleOutline as any} />}
+              onClick={() => {
+                enableDemoMode('company');
+                navigate('/admin/default');
+              }}
+            >
+              {t('Örnek Şirket Paneli', 'Demo Company Panel')}
+            </Button>
+            <Button
+              size="sm"
+              colorScheme="purple"
+              variant="outline"
+              borderRadius="12px"
+              h="40px"
+              leftIcon={<Icon as={MdBusiness as any} />}
+              onClick={() => {
+                enableDemoMode('onboarding');
+                navigate('/auth/onboarding');
+              }}
+            >
+              {t('Şirket Aç / Katıl Ekranı', 'Create / Join Screen')}
+            </Button>
+          </SimpleGrid>
         </Flex>
       </Flex>
     </DefaultAuth>

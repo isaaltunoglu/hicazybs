@@ -5,6 +5,7 @@ import { MdDashboardCustomize } from 'react-icons/md';
 // Custom components
 import { HSeparator } from 'components/separator/Separator';
 import { useOrganization } from 'contexts/OrganizationContext';
+import { useLanguage } from 'contexts/LanguageContext';
 
 export function SidebarBrand() {
 	const textColor = useColorModeValue('navy.700', 'white');
@@ -12,6 +13,7 @@ export function SidebarBrand() {
 	const brandColor = useColorModeValue('brand.500', 'brand.400');
 	const selectBg = useColorModeValue('gray.50', 'whiteAlpha.100');
 	const { orgSettings, subTeams, activeSubTeamId, setActiveSubTeamId } = useOrganization();
+	const { t } = useLanguage();
 
 	return (
 		<Flex alignItems='center' flexDirection='column' px='16px' w='100%'>
@@ -68,7 +70,7 @@ export function SidebarBrand() {
 			{subTeams.length > 0 && (
 				<Box w='100%' mb='16px'>
 					<Text fontSize='10px' fontWeight='700' color={subTextColor} mb='4px' textTransform='uppercase'>
-						Aktif Alt Takım / Çalışma Alanı
+						{t('Aktif Alt Takım / Çalışma Alanı', 'Active Sub-Team / Workspace')}
 					</Text>
 					<Select
 						size='sm'
@@ -78,7 +80,7 @@ export function SidebarBrand() {
 						value={activeSubTeamId}
 						onChange={(e) => setActiveSubTeamId(e.target.value)}
 					>
-						<option value='all'>Tüm Şirket (Genel)</option>
+						<option value='all'>{t('Tüm Şirket (Genel)', 'All Company (General)')}</option>
 						{subTeams.map((team) => (
 							<option key={team.id} value={team.id}>
 								{team.name}

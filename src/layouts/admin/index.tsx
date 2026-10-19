@@ -7,10 +7,25 @@ import Sidebar from 'components/sidebar/Sidebar';
 import { SidebarContext } from 'contexts/SidebarContext';
 import { useAuth } from 'contexts/AuthContext';
 import { useOrganization } from 'contexts/OrganizationContext';
+import { useLanguage } from 'contexts/LanguageContext';
 import { useState, useMemo } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import routes from 'routes';
 import WorkshopScan from 'views/admin/workshop/scan';
+
+const ROUTE_NAME_EN: Record<string, string> = {
+  'Panel': 'Dashboard',
+  'Görevler': 'Tasks & Missions',
+  'Envanter': 'Inventory',
+  'Kategoriler': 'Categories',
+  'Duyurular': 'Announcements',
+  'Mesai / Alan Takip': 'Attendance & Area',
+  'Bağlantılar': 'Team Links',
+  'Çalışan & Davetler': 'Employees & Invites',
+  'Departman Yönetimi': 'Departments',
+  'Kurum & Rol Ayarları': 'Company & Roles',
+  'Profil': 'Profile',
+};
 
 // Custom Chakra theme
 export default function Dashboard(props: { [x: string]: any }) {
@@ -20,6 +35,7 @@ export default function Dashboard(props: { [x: string]: any }) {
   const [toggleSidebar, setToggleSidebar] = useState(false);
   const { role, isSuperAdmin, isManager } = useAuth();
   const { orgSettings } = useOrganization();
+  const { language, t } = useLanguage();
 
   const filteredRoutes = useMemo(() => {
     return routes.filter((route) => {
@@ -38,12 +54,13 @@ export default function Dashboard(props: { [x: string]: any }) {
     return window.location.pathname !== '/admin/full-screen-maps';
   };
   const getActiveRoute = (routes: RoutesType[]): string => {
-    let activeRoute = orgSettings.organizationName || 'Yönetim Paneli';
+    let activeRoute = orgSettings.organizationName || t('Yönetim Paneli', 'Admin Dashboard');
     for (let i = 0; i < routes.length; i++) {
       if (
         window.location.href.indexOf(routes[i].layout + routes[i].path) !== -1
       ) {
-        return routes[i].name;
+        const name = routes[i].name;
+        return language === 'en' ? ROUTE_NAME_EN[name] || name : name;
       }
     }
     return activeRoute;
@@ -65,7 +82,8 @@ export default function Dashboard(props: { [x: string]: any }) {
       if (
         window.location.href.indexOf(routes[i].layout + routes[i].path) !== -1
       ) {
-        return routes[i].name;
+        const name = routes[i].name;
+        return language === 'en' ? ROUTE_NAME_EN[name] || name : name;
       }
     }
     return activeNavbar;

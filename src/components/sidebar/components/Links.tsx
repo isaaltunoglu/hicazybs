@@ -3,6 +3,21 @@
 import { NavLink, useLocation } from 'react-router-dom';
 // chakra imports
 import { Box, Flex, HStack, Text, useColorModeValue } from '@chakra-ui/react';
+import { useLanguage } from 'contexts/LanguageContext';
+
+const ROUTE_NAME_EN: Record<string, string> = {
+	'Panel': 'Dashboard',
+	'Görevler': 'Tasks & Missions',
+	'Envanter': 'Inventory',
+	'Kategoriler': 'Categories',
+	'Duyurular': 'Announcements',
+	'Mesai / Alan Takip': 'Attendance & Area',
+	'Bağlantılar': 'Team Links',
+	'Çalışan & Davetler': 'Employees & Invites',
+	'Departman Yönetimi': 'Departments',
+	'Kurum & Rol Ayarları': 'Company & Roles',
+	'Profil': 'Profile',
+};
 
 export function SidebarLinks(props: {
 	routes: RoutesType[];
@@ -14,12 +29,20 @@ export function SidebarLinks(props: {
 	let activeIcon = useColorModeValue('brand.500', 'white');
 	let textColor = useColorModeValue('secondaryGray.500', 'white');
 	let brandColor = useColorModeValue('brand.500', 'brand.400');
+	const { language } = useLanguage();
 
 	const { routes } = props;
 
 	// verifies if routeName is the one active (in browser input)
 	const activeRoute = (routeName: string) => {
 		return location.pathname.includes(routeName);
+	};
+
+	const translateRouteName = (name: string) => {
+		if (language === 'en') {
+			return ROUTE_NAME_EN[name] || name;
+		}
+		return name;
 	};
 
 	// this function creates the links from the secondary accordions (for example auth -> sign-in -> default)
@@ -50,7 +73,7 @@ export function SidebarLinks(props: {
 												me='auto'
 												color={activeRoute(route.path.toLowerCase()) ? activeColor : textColor}
 												fontWeight={activeRoute(route.path.toLowerCase()) ? 'bold' : 'normal'}>
-												{route.name}
+												{translateRouteName(route.name)}
 											</Text>
 										</Flex>
 										<Box
@@ -71,7 +94,7 @@ export function SidebarLinks(props: {
 											me='auto'
 											color={activeRoute(route.path.toLowerCase()) ? activeColor : inactiveColor}
 											fontWeight={activeRoute(route.path.toLowerCase()) ? 'bold' : 'normal'}>
-											{route.name}
+											{translateRouteName(route.name)}
 										</Text>
 										<Box h='36px' w='4px' bg='brand.400' borderRadius='5px' />
 									</HStack>

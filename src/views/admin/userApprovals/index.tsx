@@ -65,7 +65,9 @@ import {
 import { db } from '../../../firebase';
 import { useAuth } from 'contexts/AuthContext';
 import { useOrganization } from 'contexts/OrganizationContext';
+import { useLanguage } from 'contexts/LanguageContext';
 import { resolveRolePermissions } from 'services/roleService';
+import { DEMO_DEPARTMENTS, DEMO_USERS, isDemoModeActive } from 'services/demoData';
 import {
     Invitation,
     createInvitation,
@@ -117,6 +119,7 @@ export default function UserApprovals() {
 
     const { isSuperAdmin, isManager, companyId, user, userName, userSurname } = useAuth();
     const { orgSettings, roles, subTeams } = useOrganization();
+    const { t } = useLanguage();
 
     const defaultRoleName =
         roles.find((r) => r.isDefault)?.name || roles[0]?.name || 'Personel';
@@ -152,6 +155,30 @@ export default function UserApprovals() {
             // Davetler
             const invList = await getCompanyInvitations(targetCompanyId);
             setInvitations(invList);
+
+            if (isDemoModeActive()) {
+                setDepartments(DEMO_DEPARTMENTS.map((d) => d.name));
+                setApprovedUsers(
+                    DEMO_USERS.map((u) => ({
+                        uid: u.uid,
+                        name: u.name,
+                        surname: u.surname,
+                        department: u.department,
+                        email: u.email,
+                        photoURL: '',
+                        approvedAt: null,
+                        role: u.role,
+                        companyId: u.companyId,
+                        subTeamId: u.subTeamId,
+                        subTeamName: u.subTeamName,
+                        isSuperAdmin: u.isSuperAdmin,
+                        isManager: u.isManager,
+                    }))
+                );
+                setPendingUsers([]);
+                setLoading(false);
+                return;
+            }
 
             // Departmanlar
             const deptSnap = await getDocs(collection(db, 'departments'));
@@ -190,14 +217,14 @@ export default function UserApprovals() {
         } catch (err) {
             console.error('Fetch error:', err);
             toast({
-                title: 'Hata',
-                description: 'Veriler yüklenirken hata oluştu',
+                title: t('Hata', 'Error'),
+                description: t('Veriler yüklenirken hata oluştu', 'Error loading data'),
                 status: 'error',
                 duration: 3000,
             });
         }
         setLoading(false);
-    }, [companyId, toast]);
+    }, [companyId, toast, t]);
 
     useEffect(() => {
         fetchData();
@@ -394,10 +421,14 @@ export default function UserApprovals() {
                     >
                         <Box>
                             <Text color={textColor} fontSize="22px" fontWeight="700">
-                                Çalışan ve Davet Yönetimi
+                                {t('Çalışan ve Davet Yönetimi', 'Employee & Invitation Management')}
                             </Text>
                             <Text fontSize="xs" color="gray.400">
-                                {orgSettings.organizationName} • E-posta ve kişiye özel anahtar (Key) ile çalışan davet edin
+                                {orgSettings.organizationName} •{' '}
+                                {t(
+                                    'E-posta ve kişiye özel anahtar (Key) ile çalışan davet edin',
+                                    'Invite employees with personal invitation keys and dedicated registration links'
+                                )}
                             </Text>
                         </Box>
 
@@ -408,13 +439,19 @@ export default function UserApprovals() {
                                 borderRadius="14px"
                                 onClick={handleOpenInviteModal}
                             >
-                                Çalışan Davet Et (Key Oluştur)
+                                {t('Çalışan Davet Et (Key Oluştur)', 'Invite Employee (Generate Key)')}
                             </Button>
                             <TabList>
-                                <Tab>Şirket Çalışanları ({approvedUsers.length})</Tab>
-                                <Tab>Davet Anahtarları ({invitations.length})</Tab>
+                                <Tab>
+                                    {t('Şirket Çalışanları', 'Company Employees')} ({approvedUsers.length})
+                                </Tab>
+                                <Tab>
+                                    {t('Davet Anahtarları', 'Invitation Keys')} ({invitations.length})
+                                </Tab>
                                 {pendingUsers.length > 0 && (
-                                    <Tab>Bekleyenler ({pendingUsers.length})</Tab>
+                                    <Tab>
+                                        {t('Bekleyenler', 'Pending')} ({pendingUsers.length})
+                                    </Tab>
                                 )}
                             </TabList>
                         </Flex>
@@ -429,18 +466,18 @@ export default function UserApprovals() {
                                 </Flex>
                             ) : approvedUsers.length === 0 ? (
                                 <Text textAlign="center" color="gray.400" py="20px">
-                                    Henüz onaylı çalışan yok.
+                                    {t('Henüz onaylı çalışan yok.', 'No approved employees yet.')}
                                 </Text>
                             ) : (
                                 <Table variant="simple" color="gray.500">
                                     <Thead>
                                         <Tr>
-                                            <Th borderColor={borderColor}>Çalışan</Th>
-                                            <Th borderColor={borderColor}>Departman</Th>
-                                            <Th borderColor={borderColor}>Alt Takım / Alan</Th>
-                                            <Th borderColor={borderColor}>Rol</Th>
+                                            <Th borderColor={borderColor}>{t('Çalışan', 'Employee')}</Th>
+                                            <Th borderColor={borderColor}>{t('Departman', 'Department')}</Th>
+                                            <Th borderColor={borderColor}>{t('Alt Takım / Alan', 'Sub-Team / Area')}</Th>
+                                            <Th borderColor={borderColor}>{t('Rol', 'Role')}</Th>
                                             <Th borderColor={borderColor} textAlign="center">
-                                                İşlem
+                                                {t('İşlem', 'Actions')}
                                             </Th>
                                         </Tr>
                                     </Thead>
@@ -478,7 +515,9 @@ export default function UserApprovals() {
                                                             {emp.subTeamName}
                                                         </Badge>
                                                     ) : (
-                                                        <Badge variant="outline">Tüm Şirket</Badge>
+                                                        <Badge variant="outline">
+                                                            {t('Tüm Şirket', 'All Company')}
+                                                        </Badge>
                                                     )}
                                                 </Td>
                                                 <Td borderColor={borderColor}>
@@ -488,7 +527,7 @@ export default function UserApprovals() {
                                                 </Td>
                                                 <Td borderColor={borderColor} textAlign="center">
                                                     <Flex justify="center" gap="10px">
-                                                        <Tooltip label="Rol / Alt Takım Düzenle">
+                                                        <Tooltip label={t('Rol / Alt Takım Düzenle', 'Edit Role / Sub-Team')}>
                                                             <IconButton
                                                                 aria-label="Edit Role"
                                                                 icon={<Icon as={MdEdit as any} />}
@@ -497,7 +536,7 @@ export default function UserApprovals() {
                                                             />
                                                         </Tooltip>
                                                         {isSuperAdmin && (
-                                                            <Tooltip label="Erişimi Kaldır">
+                                                            <Tooltip label={t('Erişimi Kaldır', 'Revoke Access')}>
                                                                 <IconButton
                                                                     aria-label="Revoke"
                                                                     icon={<Icon as={MdDelete as any} />}
@@ -526,26 +565,29 @@ export default function UserApprovals() {
                             ) : invitations.length === 0 ? (
                                 <Flex direction="column" align="center" py="30px" gap="10px">
                                     <Text color="gray.400">
-                                        Henüz oluşturulmuş bir çalışan daveti bulunmuyor.
+                                        {t(
+                                            'Henüz oluşturulmuş bir çalışan daveti bulunmuyor.',
+                                            'No employee invitations have been created yet.'
+                                        )}
                                     </Text>
                                     <Button
                                         size="sm"
                                         colorScheme="brand"
                                         onClick={handleOpenInviteModal}
                                     >
-                                        İlk Çalışan Davetini Oluştur
+                                        {t('İlk Çalışan Davetini Oluştur', 'Create First Employee Invitation')}
                                     </Button>
                                 </Flex>
                             ) : (
                                 <Table variant="simple" color="gray.500">
                                     <Thead>
                                         <Tr>
-                                            <Th borderColor={borderColor}>Davetli E-posta</Th>
-                                            <Th borderColor={borderColor}>Özel Key</Th>
-                                            <Th borderColor={borderColor}>Rol & Alt Takım</Th>
-                                            <Th borderColor={borderColor}>Durum</Th>
+                                            <Th borderColor={borderColor}>{t('Davetli E-posta', 'Invited Email')}</Th>
+                                            <Th borderColor={borderColor}>{t('Özel Key', 'Invite Key')}</Th>
+                                            <Th borderColor={borderColor}>{t('Rol & Alt Takım', 'Role & Sub-Team')}</Th>
+                                            <Th borderColor={borderColor}>{t('Durum', 'Status')}</Th>
                                             <Th borderColor={borderColor} textAlign="right">
-                                                Davet İşlemleri
+                                                {t('Davet İşlemleri', 'Actions')}
                                             </Th>
                                         </Tr>
                                     </Thead>
@@ -599,13 +641,13 @@ export default function UserApprovals() {
                                                         }
                                                     >
                                                         {inv.status === 'accepted'
-                                                            ? 'Katıldı'
-                                                            : 'Bekliyor'}
+                                                            ? t('Katıldı', 'Joined')
+                                                            : t('Bekliyor', 'Pending')}
                                                     </Badge>
                                                 </Td>
                                                 <Td borderColor={borderColor} textAlign="right">
                                                     <Flex justify="flex-end" gap="6px">
-                                                        <Tooltip label="Davet E-postası Gönder">
+                                                        <Tooltip label={t('Davet E-postası Gönder', 'Send Invitation Email')}>
                                                             <IconButton
                                                                 aria-label="Send Email"
                                                                 icon={<Icon as={MdEmail as any} />}
@@ -618,7 +660,7 @@ export default function UserApprovals() {
                                                                 }}
                                                             />
                                                         </Tooltip>
-                                                        <Tooltip label="Özel Kayıt Linkini Kopyala">
+                                                        <Tooltip label={t('Özel Kayıt Linkini Kopyala', 'Copy Dedicated Registration Link')}>
                                                             <IconButton
                                                                 aria-label="Copy Invite Link"
                                                                 icon={<Icon as={MdLink as any} />}
@@ -626,22 +668,22 @@ export default function UserApprovals() {
                                                                 onClick={() =>
                                                                     copyText(
                                                                         buildInviteUrl(inv.key),
-                                                                        'Özel kayıt bağlantısı'
+                                                                        t('Özel kayıt bağlantısı', 'Registration link')
                                                                     )
                                                                 }
                                                             />
                                                         </Tooltip>
-                                                        <Tooltip label="Davet Anahtarını (Key) Kopyala">
+                                                        <Tooltip label={t('Davet Anahtarını (Key) Kopyala', 'Copy Invite Key')}>
                                                             <IconButton
                                                                 aria-label="Copy Key"
                                                                 icon={<Icon as={MdVpnKey as any} />}
                                                                 size="sm"
                                                                 onClick={() =>
-                                                                    copyText(inv.key, 'Davet anahtarı')
+                                                                    copyText(inv.key, t('Davet anahtarı', 'Invite key'))
                                                                 }
                                                             />
                                                         </Tooltip>
-                                                        <Tooltip label="Daveti Sil / İptal Et">
+                                                        <Tooltip label={t('Daveti Sil / İptal Et', 'Delete / Revoke Invitation')}>
                                                             <IconButton
                                                                 aria-label="Delete Invite"
                                                                 icon={<Icon as={MdDelete as any} />}
@@ -668,10 +710,10 @@ export default function UserApprovals() {
                                 <Table variant="simple" color="gray.500">
                                     <Thead>
                                         <Tr>
-                                            <Th borderColor={borderColor}>Kullanıcı</Th>
-                                            <Th borderColor={borderColor}>Departman</Th>
+                                            <Th borderColor={borderColor}>{t('Kullanıcı', 'User')}</Th>
+                                            <Th borderColor={borderColor}>{t('Departman', 'Department')}</Th>
                                             <Th borderColor={borderColor} textAlign="center">
-                                                İşlem
+                                                {t('İşlem', 'Actions')}
                                             </Th>
                                         </Tr>
                                     </Thead>
@@ -740,23 +782,26 @@ export default function UserApprovals() {
                 <ModalOverlay />
                 <ModalContent borderRadius="20px">
                     <ModalHeader>
-                        Çalışan Davet Et ({orgSettings.organizationName})
+                        {t('Çalışan Davet Et', 'Invite Employee')} ({orgSettings.organizationName})
                     </ModalHeader>
                     <ModalCloseButton />
                     <ModalBody>
                         {!createdInvite ? (
                             <VStack spacing="14px" align="stretch">
                                 <Text fontSize="xs" color="gray.500">
-                                    Çalışanın e-posta adresini girin. Sistem o kişiye özel bir <b>Davet Anahtarı (Key)</b> ve <b>Özel Kayıt Bağlantısı</b> oluşturacaktır.
+                                    {t(
+                                        'Çalışanın e-posta adresini girin. Sistem o kişiye özel bir Davet Anahtarı (Key) ve Özel Kayıt Bağlantısı oluşturacaktır.',
+                                        'Enter the employee email address. The system will generate a personal Invitation Key and a Dedicated Registration Link.'
+                                    )}
                                 </Text>
 
                                 <FormControl isRequired>
                                     <FormLabel fontSize="sm" fontWeight="600">
-                                        Çalışan E-posta Adresi
+                                        {t('Çalışan E-posta Adresi', 'Employee Email Address')}
                                     </FormLabel>
                                     <Input
                                         type="email"
-                                        placeholder="calisan@sirket.com"
+                                        placeholder="employee@company.com"
                                         value={inviteEmail}
                                         onChange={(e) => setInviteEmail(e.target.value)}
                                         borderRadius="12px"
@@ -766,10 +811,10 @@ export default function UserApprovals() {
                                 <SimpleGrid columns={2} spacing="10px">
                                     <FormControl>
                                         <FormLabel fontSize="sm" fontWeight="600">
-                                            Ad (İsteğe Bağlı)
+                                            {t('Ad (İsteğe Bağlı)', 'First Name (Optional)')}
                                         </FormLabel>
                                         <Input
-                                            placeholder="Ad"
+                                            placeholder={t('Ad', 'First Name')}
                                             value={inviteName}
                                             onChange={(e) => setInviteName(e.target.value)}
                                             borderRadius="12px"
@@ -777,10 +822,10 @@ export default function UserApprovals() {
                                     </FormControl>
                                     <FormControl>
                                         <FormLabel fontSize="sm" fontWeight="600">
-                                            Soyad (İsteğe Bağlı)
+                                            {t('Soyad (İsteğe Bağlı)', 'Last Name (Optional)')}
                                         </FormLabel>
                                         <Input
-                                            placeholder="Soyad"
+                                            placeholder={t('Soyad', 'Last Name')}
                                             value={inviteSurname}
                                             onChange={(e) => setInviteSurname(e.target.value)}
                                             borderRadius="12px"
@@ -791,7 +836,7 @@ export default function UserApprovals() {
                                 <SimpleGrid columns={2} spacing="10px">
                                     <FormControl>
                                         <FormLabel fontSize="sm" fontWeight="600">
-                                            Atanacak Rol
+                                            {t('Atanacak Rol', 'Assigned Role')}
                                         </FormLabel>
                                         <Select
                                             value={inviteRole}
@@ -808,10 +853,10 @@ export default function UserApprovals() {
 
                                     <FormControl>
                                         <FormLabel fontSize="sm" fontWeight="600">
-                                            Departman
+                                            {t('Departman', 'Department')}
                                         </FormLabel>
                                         <Input
-                                            placeholder="Örn: Yazılım, İK, Üretim..."
+                                            placeholder={t('Örn: Yazılım, İK, Üretim...', 'e.g. Engineering, HR, Operations...')}
                                             value={inviteDepartment}
                                             onChange={(e) => setInviteDepartment(e.target.value)}
                                             borderRadius="12px"
@@ -828,17 +873,17 @@ export default function UserApprovals() {
                                 {subTeams.length > 0 && (
                                     <FormControl>
                                         <FormLabel fontSize="sm" fontWeight="600">
-                                            Alt Takım / Çalışma Alanı
+                                            {t('Alt Takım / Çalışma Alanı', 'Sub-Team / Workspace')}
                                         </FormLabel>
                                         <Select
                                             value={inviteSubTeamId}
                                             onChange={(e) => setInviteSubTeamId(e.target.value)}
                                             borderRadius="12px"
                                         >
-                                            <option value="">Tüm Şirket (Genel)</option>
-                                            {subTeams.map((t) => (
-                                                <option key={t.id} value={t.id}>
-                                                    {t.name}
+                                            <option value="">{t('Tüm Şirket (Genel)', 'All Company (General)')}</option>
+                                            {subTeams.map((team) => (
+                                                <option key={team.id} value={team.id}>
+                                                    {team.name}
                                                 </option>
                                             ))}
                                         </Select>
@@ -855,17 +900,17 @@ export default function UserApprovals() {
                                     borderRadius="16px"
                                 >
                                     <Text fontWeight="700" color="green.800" mb="4px">
-                                        Davet Anahtarı ve Özel Bağlantı Hazır!
+                                        {t('Davet Anahtarı ve Özel Bağlantı Hazır!', 'Invitation Key & Dedicated Link Ready!')}
                                     </Text>
                                     <Text fontSize="xs" color="green.700">
-                                        Alıcı: <b>{createdInvite.email}</b> • Rol: <b>{createdInvite.role}</b>
-                                        {createdInvite.subTeamName ? ` • Alt Takım: ${createdInvite.subTeamName}` : ''}
+                                        {t('Alıcı', 'Recipient')}: <b>{createdInvite.email}</b> • {t('Rol', 'Role')}: <b>{createdInvite.role}</b>
+                                        {createdInvite.subTeamName ? ` • ${t('Alt Takım', 'Sub-Team')}: ${createdInvite.subTeamName}` : ''}
                                     </Text>
                                 </Box>
 
                                 <FormControl>
                                     <FormLabel fontSize="xs" fontWeight="700" color="gray.500">
-                                        KİŞİYE ÖZEL DAVET ANAHTARI (KEY)
+                                        {t('KİŞİYE ÖZEL DAVET ANAHTARI (KEY)', 'PERSONAL INVITATION KEY')}
                                     </FormLabel>
                                     <Flex gap="8px">
                                         <Input
@@ -879,18 +924,18 @@ export default function UserApprovals() {
                                         <Button
                                             leftIcon={<Icon as={MdContentCopy as any} />}
                                             onClick={() =>
-                                                copyText(createdInvite.key, 'Davet anahtarı')
+                                                copyText(createdInvite.key, t('Davet anahtarı', 'Invitation key'))
                                             }
                                             borderRadius="12px"
                                         >
-                                            Kopyala
+                                            {t('Kopyala', 'Copy')}
                                         </Button>
                                     </Flex>
                                 </FormControl>
 
                                 <FormControl>
                                     <FormLabel fontSize="xs" fontWeight="700" color="gray.500">
-                                        ÖZEL KAYIT PANELİ BAĞLANTISI
+                                        {t('ÖZEL KAYIT PANELİ BAĞLANTISI', 'DEDICATED REGISTRATION LINK')}
                                     </FormLabel>
                                     <Flex gap="8px">
                                         <Input
@@ -904,12 +949,12 @@ export default function UserApprovals() {
                                             onClick={() =>
                                                 copyText(
                                                     buildInviteUrl(createdInvite.key),
-                                                    'Özel kayıt linki'
+                                                    t('Özel kayıt linki', 'Registration link')
                                                 )
                                             }
                                             borderRadius="12px"
                                         >
-                                            Linki Kopyala
+                                            {t('Linki Kopyala', 'Copy Link')}
                                         </Button>
                                     </Flex>
                                 </FormControl>
@@ -923,14 +968,14 @@ export default function UserApprovals() {
                                         window.location.href = buildInviteMailtoUrl(createdInvite);
                                     }}
                                 >
-                                    E-posta İstemcisi ile Davet Maili Gönder
+                                    {t('E-posta İstemcisi ile Davet Maili Gönder', 'Send Invitation Email via Mail Client')}
                                 </Button>
                             </VStack>
                         )}
                     </ModalBody>
                     <ModalFooter gap="8px">
                         <Button variant="ghost" onClick={onInviteClose} borderRadius="12px">
-                            Kapat
+                            {t('Kapat', 'Close')}
                         </Button>
                         {!createdInvite && (
                             <Button
@@ -939,7 +984,7 @@ export default function UserApprovals() {
                                 onClick={handleCreateInvitation}
                                 isLoading={actionLoading}
                             >
-                                Key ve Özel Link Oluştur
+                                {t('Key ve Özel Link Oluştur', 'Generate Key & Dedicated Link')}
                             </Button>
                         )}
                     </ModalFooter>

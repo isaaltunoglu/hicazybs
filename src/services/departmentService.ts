@@ -5,6 +5,7 @@ import {
     query,
     orderBy
 } from 'firebase/firestore';
+import { DEMO_DEPARTMENTS, isDemoModeActive } from './demoData';
 
 export interface Department {
     id: string;
@@ -12,6 +13,7 @@ export interface Department {
 }
 
 export const getAllDepartments = async (): Promise<Department[]> => {
+    if (isDemoModeActive()) return DEMO_DEPARTMENTS;
     try {
         const q = query(collection(db, 'departments'), orderBy('name'));
         const querySnapshot = await getDocs(q);

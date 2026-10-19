@@ -14,6 +14,7 @@ import {
     arrayUnion,
 } from 'firebase/firestore';
 import { getCurrentTenantScope, matchesTenantScope } from './tenantScope';
+import { DEMO_MISSIONS, isDemoModeActive } from './demoData';
 
 const COLLECTION_NAME = 'missions';
 
@@ -42,6 +43,9 @@ const convertDoc = (docSnap: any): Mission => {
 };
 
 export const getAllMissions = async (): Promise<Mission[]> => {
+    if (isDemoModeActive()) {
+        return DEMO_MISSIONS.filter((m) => matchesTenantScope(m));
+    }
     try {
         const q = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);

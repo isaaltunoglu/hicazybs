@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getCurrentTenantScope, matchesTenantScope } from './tenantScope';
+import { DEMO_SESSIONS, isDemoModeActive } from './demoData';
 
 // --- TYPES ---
 
@@ -58,6 +59,9 @@ function getSettingsDocId(): string {
 }
 
 export async function getWorkshopSettings(): Promise<WorkshopSettings> {
+    if (isDemoModeActive()) {
+        return DEFAULT_SETTINGS;
+    }
     const docId = getSettingsDocId();
     const ref = doc(db, 'workshopSettings', docId);
     const snap = await getDoc(ref);
@@ -81,6 +85,7 @@ export async function getWorkshopSettings(): Promise<WorkshopSettings> {
 }
 
 export async function updateWorkshopSettings(settings: Partial<WorkshopSettings>): Promise<void> {
+    if (isDemoModeActive()) return;
     const docId = getSettingsDocId();
     const scope = getCurrentTenantScope();
     const ref = doc(db, 'workshopSettings', docId);
@@ -98,6 +103,9 @@ export async function updateWorkshopSettings(settings: Partial<WorkshopSettings>
 // --- SESSIONS ---
 
 export async function getUserActiveSession(uid: string): Promise<WorkshopSession | null> {
+    if (isDemoModeActive()) {
+        return DEMO_SESSIONS.find((s) => s.uid === uid && s.status === 'active' && matchesTenantScope(s)) || null;
+    }
     const q = query(
         collection(db, 'workshopSessions'),
         where('uid', '==', uid),
@@ -112,6 +120,9 @@ export async function getUserActiveSession(uid: string): Promise<WorkshopSession
 export async function checkIn(uid: string, userName: string): Promise<string> {
     const scope = getCurrentTenantScope();
     const today = new Date().toISOString().split('T')[0];
+    if (isDemoModeActive()) {
+        return 'demo-session-new';
+    }
     const ref = await addDoc(collection(db, 'workshopSessions'), {
         companyId: scope.companyId,
         subTeamId: scope.subTeamId === 'all' ? '' : scope.subTeamId,
@@ -130,6 +141,9 @@ export async function checkOut(sessionId: string, checkInTime: Timestamp): Promi
     const now = new Date();
     const checkInDate = checkInTime.toDate();
     const durationMinutes = Math.round((now.getTime() - checkInDate.getTime()) / 60000);
+    if (isDemoModeActive()) {
+        return durationMinutes;
+    }
 
     await updateDoc(doc(db, 'workshopSessions', sessionId), {
         checkOut: serverTimestamp(),
@@ -140,6 +154,7 @@ export async function checkOut(sessionId: string, checkInTime: Timestamp): Promi
 }
 
 export async function expireSession(sessionId: string): Promise<void> {
+    if (isDemoModeActive()) return;
     await updateDoc(doc(db, 'workshopSessions', sessionId), {
         status: 'expired',
         duration: 0,
@@ -147,6 +162,9 @@ export async function expireSession(sessionId: string): Promise<void> {
 }
 
 export async function getActiveSessions(): Promise<WorkshopSession[]> {
+    if (isDemoModeActive()) {
+        return DEMO_SESSIONS.filter((s) => s.status === 'active' && matchesTenantScope(s));
+    }
     const q = query(
         collection(db, 'workshopSessions'),
         where('status', '==', 'active')
@@ -159,6 +177,9 @@ export async function getActiveSessions(): Promise<WorkshopSession[]> {
 }
 
 export async function getAllCompletedSessions(): Promise<WorkshopSession[]> {
+    if (isDemoModeActive()) {
+        return DEMO_SESSIONS.filter((s) => s.status === 'completed' && matchesTenantScope(s));
+    }
     const q = query(
         collection(db, 'workshopSessions'),
         where('status', '==', 'completed')
@@ -171,6 +192,9 @@ export async function getAllCompletedSessions(): Promise<WorkshopSession[]> {
 }
 
 export async function getLast7DaysSessions(): Promise<WorkshopSession[]> {
+    if (isDemoModeActive()) {
+        return DEMO_SESSIONS.filter((s) => s.status === 'completed' && matchesTenantScope(s));
+    }
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
     const dateStr = sevenDaysAgo.toISOString().split('T')[0];

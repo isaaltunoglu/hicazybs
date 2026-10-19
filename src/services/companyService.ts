@@ -12,6 +12,7 @@ import {
     serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { DEMO_COMPANY, DEMO_SUB_TEAMS, isDemoModeActive } from './demoData';
 
 export interface Company {
     id: string;
@@ -83,6 +84,7 @@ export async function createCompany(data: {
 
 export async function getCompanyById(companyId: string): Promise<Company | null> {
     if (!companyId) return null;
+    if (isDemoModeActive()) return DEMO_COMPANY;
     try {
         const snap = await getDoc(doc(db, 'companies', companyId));
         if (snap.exists()) {
@@ -99,6 +101,7 @@ export async function updateCompany(
     companyId: string,
     data: Partial<Omit<Company, 'id' | 'ownerUid'>>
 ): Promise<void> {
+    if (isDemoModeActive()) return;
     await setDoc(doc(db, 'companies', companyId), data, { merge: true });
 }
 
@@ -106,6 +109,7 @@ export async function updateCompany(
 
 export async function getSubTeamsByCompany(companyId: string): Promise<SubTeam[]> {
     if (!companyId) return [];
+    if (isDemoModeActive()) return DEMO_SUB_TEAMS;
     try {
         const q = query(collection(db, 'subTeams'), where('companyId', '==', companyId));
         const snap = await getDocs(q);

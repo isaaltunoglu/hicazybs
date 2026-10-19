@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getCurrentTenantScope, matchesTenantScope } from './tenantScope';
+import { DEMO_ANNOUNCEMENTS, isDemoModeActive } from './demoData';
 
 export interface Announcement {
     id: string;
@@ -31,6 +32,9 @@ export interface AnnouncementFormData {
 }
 
 export async function getAllAnnouncements(): Promise<Announcement[]> {
+    if (isDemoModeActive()) {
+        return DEMO_ANNOUNCEMENTS.filter((a) => matchesTenantScope(a));
+    }
     const q = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
     return snapshot.docs

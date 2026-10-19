@@ -20,6 +20,7 @@ import { getAllItems, createItem, updateItem, deleteItem } from 'services/invent
 import { getAllCategories } from 'services/categoryService';
 import { useAuth } from 'contexts/AuthContext';
 import { useOrganization } from 'contexts/OrganizationContext';
+import { useLanguage } from 'contexts/LanguageContext';
 
 export default function Inventory() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -31,6 +32,7 @@ export default function Inventory() {
 
     const { companyId } = useAuth();
     const { activeSubTeamId } = useOrganization();
+    const { t } = useLanguage();
 
     const { isOpen: isFormOpen, onOpen: onFormOpen, onClose: onFormClose } = useDisclosure();
     const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
@@ -49,13 +51,13 @@ export default function Inventory() {
         } catch (err) {
             console.error('Error fetching data:', err);
             toast({
-                title: 'Veri yüklenirken hata oluştu',
+                title: t('Veri yüklenirken hata oluştu', 'Error loading data'),
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
             });
         }
-    }, [toast, companyId, activeSubTeamId]);
+    }, [toast, companyId, activeSubTeamId, t]);
 
     useEffect(() => {
         fetchData();
@@ -79,10 +81,10 @@ export default function Inventory() {
     const handleFormSubmit = async (data: InventoryItemFormData) => {
         if (editItem) {
             await updateItem(editItem.id, data);
-            toast({ title: 'Öğe güncellendi', status: 'success', duration: 2000, isClosable: true });
+            toast({ title: t('Öğe güncellendi', 'Item updated'), status: 'success', duration: 2000, isClosable: true });
         } else {
             await createItem(data);
-            toast({ title: 'Öğe eklendi', status: 'success', duration: 2000, isClosable: true });
+            toast({ title: t('Öğe eklendi', 'Item added'), status: 'success', duration: 2000, isClosable: true });
         }
         await fetchData();
     };
@@ -90,7 +92,7 @@ export default function Inventory() {
     const handleDeleteConfirm = async () => {
         if (!deleteTarget) return;
         await deleteItem(deleteTarget.id);
-        toast({ title: 'Öğe silindi', status: 'info', duration: 2000, isClosable: true });
+        toast({ title: t('Öğe silindi', 'Item deleted'), status: 'info', duration: 2000, isClosable: true });
         setDeleteTarget(null);
         await fetchData();
     };
@@ -105,11 +107,11 @@ export default function Inventory() {
         <Box pt={{ base: '130px', md: '80px', xl: '80px' }}>
             <Flex mb="20px" justifyContent="space-between" alignItems="center" flexDirection={{ base: 'column', md: 'row' }} gap="4">
                 <Text fontSize="22px" fontWeight="700" color={textColor}>
-                    Envanter Listesi
+                    {t('Envanter Listesi', 'Inventory List')}
                 </Text>
                 <Flex gap="2" w={{ base: '100%', md: 'auto' }}>
                     <Select
-                        placeholder="Tüm Kategoriler"
+                        placeholder={t('Tüm Kategoriler', 'All Categories')}
                         value={selectedCategory?.id || ''}
                         onChange={(e) => {
                             const cat = categories.find(c => c.id === e.target.value);
@@ -134,7 +136,7 @@ export default function Inventory() {
                         size="md"
                         minW="150px"
                     >
-                        Yeni Öğe Ekle
+                        {t('Yeni Öğe Ekle', 'Add New Item')}
                     </Button>
                 </Flex>
             </Flex>

@@ -45,6 +45,7 @@ import Card from 'components/card/Card';
 import IconBox from 'components/icons/IconBox';
 import { useAuth } from 'contexts/AuthContext';
 import { useOrganization } from 'contexts/OrganizationContext';
+import { useLanguage } from 'contexts/LanguageContext';
 import {
     getActiveSessions,
     getAllCompletedSessions,
@@ -82,13 +83,14 @@ export default function WorkshopDashboard() {
 
     const { isSuperAdmin, isManager, companyId } = useAuth();
     const { orgSettings, activeSubTeam, activeSubTeamId } = useOrganization();
+    const { t } = useLanguage();
     const toast = useToast();
     const navigate = useNavigate();
 
     const canManage = isManager || isSuperAdmin;
     const areaLabel = activeSubTeam
-        ? `${activeSubTeam.name} (${orgSettings.workspaceLabel || 'Çalışma Alanı'})`
-        : orgSettings.workspaceLabel || 'Çalışma Alanı';
+        ? `${activeSubTeam.name} (${orgSettings.workspaceLabel || t('Çalışma Alanı', 'Workspace')})`
+        : orgSettings.workspaceLabel || t('Çalışma Alanı', 'Workspace');
 
     const textColor = useColorModeValue('secondaryGray.900', 'white');
     const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
@@ -245,7 +247,7 @@ export default function WorkshopDashboard() {
             {/* Header */}
             <Flex mb="24px" justify="space-between" align="center" flexWrap="wrap" gap="12px">
                 <Text fontSize="2xl" fontWeight="700" color={textColor}>
-                    {areaLabel} / Mesai Takibi
+                    {areaLabel} / {t('Mesai Takibi', 'Attendance Tracking')}
                 </Text>
                 <Flex gap="10px">
                     <Button
@@ -255,7 +257,7 @@ export default function WorkshopDashboard() {
                         onClick={() => navigate('/admin/workshop/scan')}
                         size="md"
                     >
-                        Giriş/Çıkış
+                        {t('Giriş/Çıkış', 'Check In/Out')}
                     </Button>
                     {canManage && (
                         <>
@@ -267,7 +269,7 @@ export default function WorkshopDashboard() {
                                 onClick={onQrOpen}
                                 size="md"
                             >
-                                QR Kodu
+                                {t('QR Kodu', 'QR Code')}
                             </Button>
                             <Button
                                 leftIcon={<Icon as={MdSettings as any} />}
@@ -276,11 +278,11 @@ export default function WorkshopDashboard() {
                                 onClick={onSettingsOpen}
                                 size="md"
                             >
-                                Ayarlar
+                                {t('Ayarlar', 'Settings')}
                             </Button>
                         </>
                     )}
-                    <Tooltip label="Yenile">
+                    <Tooltip label={t('Yenile', 'Refresh')}>
                         <Button
                             leftIcon={<Icon as={MdRefresh as any} />}
                             variant="ghost"
@@ -289,7 +291,7 @@ export default function WorkshopDashboard() {
                             isLoading={loading}
                             size="md"
                         >
-                            Yenile
+                            {t('Yenile', 'Refresh')}
                         </Button>
                     </Tooltip>
                 </Flex>
@@ -313,7 +315,7 @@ export default function WorkshopDashboard() {
                                         {activeSessions.length}
                                     </Text>
                                     <Text fontSize="sm" color="gray.400" fontWeight="500">
-                                        Şu An Aktif ({areaLabel})
+                                        {t('Şu An Aktif', 'Currently Active')} ({areaLabel})
                                     </Text>
                                 </Box>
                             </Flex>
@@ -328,7 +330,7 @@ export default function WorkshopDashboard() {
                                         {formatDuration(weekSessions.reduce((s, x) => s + (x.duration ?? 0), 0))}
                                     </Text>
                                     <Text fontSize="sm" color="gray.400" fontWeight="500">
-                                        Bu Hafta Toplam
+                                        {t('Bu Hafta Toplam', 'This Week Total')}
                                     </Text>
                                 </Box>
                             </Flex>
@@ -343,7 +345,7 @@ export default function WorkshopDashboard() {
                                         {leaderboard.length}
                                     </Text>
                                     <Text fontSize="sm" color="gray.400" fontWeight="500">
-                                        Toplam Katılımcı
+                                        {t('Toplam Katılımcı', 'Total Participants')}
                                     </Text>
                                 </Box>
                             </Flex>
@@ -358,17 +360,17 @@ export default function WorkshopDashboard() {
                                 <Flex align="center" gap="8px">
                                     <Box w="10px" h="10px" borderRadius="full" bg="green.400" />
                                     <Text fontSize="lg" fontWeight="700" color={textColor}>
-                                        Şu An Aktif Olanlar
+                                        {t('Şu An Aktif Olanlar', 'Currently Checked-In')}
                                     </Text>
                                 </Flex>
                                 <Badge colorScheme="green" borderRadius="full" px="10px">
-                                    {activeSessions.length} kişi
+                                    {activeSessions.length} {t('kişi', 'online')}
                                 </Badge>
                             </Flex>
                             <Divider />
                             {activeSessions.length === 0 ? (
                                 <Flex justify="center" py="32px">
-                                    <Text color="gray.400">Şu an aktif kimse yok</Text>
+                                    <Text color="gray.400">{t('Şu an aktif kimse yok', 'No active sessions right now')}</Text>
                                 </Flex>
                             ) : (
                                 <Box px="24px" py="12px">
@@ -385,7 +387,7 @@ export default function WorkshopDashboard() {
                                                     </Text>
                                                 </Flex>
                                                 <Tag colorScheme="green" borderRadius="full" size="sm">
-                                                    {hours > 0 ? `${hours}s ${mins}dk` : `${mins} dk`}
+                                                    {hours > 0 ? `${hours}h ${mins}m` : `${mins} m`}
                                                 </Tag>
                                             </Flex>
                                         );
@@ -398,15 +400,15 @@ export default function WorkshopDashboard() {
                         <Card p="0">
                             <Flex px="24px" pt="20px" pb="14px" align="center" gap="8px">
                                 <Text fontSize="lg" fontWeight="700" color={textColor}>
-                                    Haftalık Katılım
+                                    {t('Haftalık Katılım', 'Weekly Attendance')}
                                 </Text>
-                                <Text fontSize="xs" color="gray.400">(saat)</Text>
+                                <Text fontSize="xs" color="gray.400">({t('saat', 'hours')})</Text>
                             </Flex>
                             <Divider />
                             <Box px="10px" pb="10px" pt="4px">
                                 <ReactApexChart
                                     type="bar"
-                                    series={[{ name: 'Çalışma Saati', data: chartData }]}
+                                    series={[{ name: t('Çalışma Saati', 'Work Hours'), data: chartData }]}
                                     options={chartOptions}
                                     height={220}
                                 />
@@ -419,22 +421,22 @@ export default function WorkshopDashboard() {
                         <Flex px="24px" pt="20px" pb="14px" align="center" gap="8px">
                             <Icon as={MdLeaderboard as any} h="22px" w="22px" color="orange.400" />
                             <Text fontSize="lg" fontWeight="700" color={textColor}>
-                                Katılım Sıralaması
+                                {t('Katılım Sıralaması', 'Attendance Leaderboard')}
                             </Text>
-                            <Text fontSize="xs" color="gray.400">– toplam çalışma süresi</Text>
+                            <Text fontSize="xs" color="gray.400">– {t('toplam çalışma süresi', 'total logged time')}</Text>
                         </Flex>
                         <Divider />
                         {leaderboard.length === 0 ? (
                             <Flex justify="center" py="32px">
-                                <Text color="gray.400">Henüz kayıt yok</Text>
+                                <Text color="gray.400">{t('Henüz kayıt yok', 'No records yet')}</Text>
                             </Flex>
                         ) : (
                             <Table variant="simple" color="gray.500">
                                 <Thead>
                                     <Tr>
                                         <Th borderColor={borderColor} w="60px">#</Th>
-                                        <Th borderColor={borderColor}>Kullanıcı</Th>
-                                        <Th borderColor={borderColor} textAlign="right">Toplam Süre</Th>
+                                        <Th borderColor={borderColor}>{t('Kullanıcı', 'Employee')}</Th>
+                                        <Th borderColor={borderColor} textAlign="right">{t('Toplam Süre', 'Total Duration')}</Th>
                                     </Tr>
                                 </Thead>
                                 <Tbody>

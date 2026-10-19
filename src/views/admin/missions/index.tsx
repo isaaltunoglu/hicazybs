@@ -10,6 +10,7 @@ import { getAllMissions, createMission, updateMission, deleteMission, updateMiss
 import { getAllApprovedUsers, UserProfile } from 'services/userService';
 import { useAuth } from 'contexts/AuthContext';
 import { useOrganization } from 'contexts/OrganizationContext';
+import { useLanguage } from 'contexts/LanguageContext';
 
 export default function Missions() {
     const [missions, setMissions] = useState<Mission[]>([]);
@@ -25,6 +26,7 @@ export default function Missions() {
     const toast = useToast();
     const { isManager, isSuperAdmin, userName, userSurname, companyId } = useAuth();
     const { activeSubTeamId } = useOrganization();
+    const { t } = useLanguage();
 
     const canManage = isManager || isSuperAdmin;
 
@@ -41,13 +43,13 @@ export default function Missions() {
         } catch (err) {
             console.error('Error fetching data:', err);
             toast({
-                title: 'Veri yüklenirken hata oluştu',
+                title: t('Veri yüklenirken hata oluştu', 'Error loading data'),
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
             });
         }
-    }, [toast, companyId, activeSubTeamId]);
+    }, [toast, companyId, activeSubTeamId, t]);
 
     useEffect(() => {
         fetchData();
@@ -94,7 +96,7 @@ export default function Missions() {
 
             if (message.trim()) {
                 const userLabel = canManage
-                    ? `${fullName} (Yönetici)`
+                    ? `${fullName} (${t('Yönetici', 'Manager')})`
                     : fullName;
                 await addMissionUpdate(updateTarget.id, {
                     user: userLabel,
@@ -103,11 +105,11 @@ export default function Missions() {
                 });
             }
 
-            toast({ title: 'Görev güncellendi', status: 'success', duration: 2000 });
+            toast({ title: t('Görev güncellendi', 'Task updated'), status: 'success', duration: 2000 });
             fetchData();
         } catch (err) {
             console.error('Error updating mission:', err);
-            toast({ title: 'Güncelleme hatası', status: 'error', duration: 3000 });
+            toast({ title: t('Güncelleme hatası', 'Update error'), status: 'error', duration: 3000 });
         }
     };
 
@@ -115,14 +117,14 @@ export default function Missions() {
         try {
             if (editMission) {
                 await updateMission(editMission.id, data);
-                toast({ title: 'Görev güncellendi', status: 'success', duration: 2000, isClosable: true });
+                toast({ title: t('Görev güncellendi', 'Task updated'), status: 'success', duration: 2000, isClosable: true });
             } else {
                 await createMission(data);
-                toast({ title: 'Görev eklendi', status: 'success', duration: 2000, isClosable: true });
+                toast({ title: t('Görev eklendi', 'Task added'), status: 'success', duration: 2000, isClosable: true });
             }
             await fetchData();
         } catch (error) {
-            toast({ title: 'İşlem başarısız', status: 'error', duration: 3000, isClosable: true });
+            toast({ title: t('İşlem başarısız', 'Operation failed'), status: 'error', duration: 3000, isClosable: true });
         }
     };
 
@@ -130,11 +132,11 @@ export default function Missions() {
         if (!deleteTarget) return;
         try {
             await deleteMission(deleteTarget.id);
-            toast({ title: 'Görev silindi', status: 'info', duration: 2000, isClosable: true });
+            toast({ title: t('Görev silindi', 'Task deleted'), status: 'info', duration: 2000, isClosable: true });
             setDeleteTarget(null);
             await fetchData();
         } catch (error) {
-            toast({ title: 'Silme işlemi başarısız', status: 'error', duration: 3000, isClosable: true });
+            toast({ title: t('Silme işlemi başarısız', 'Delete failed'), status: 'error', duration: 3000, isClosable: true });
         } finally {
             onDeleteClose();
         }
@@ -145,11 +147,11 @@ export default function Missions() {
             <Flex mb="20px" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap="12px">
                 <Flex align="center" gap="16px">
                     <Text fontSize="2xl" fontWeight="700" color="secondaryGray.900">
-                        {showMyMissions ? 'Görevlerim' : 'Tüm Görevler'}
+                        {showMyMissions ? t('Görevlerim', 'My Tasks') : t('Tüm Görevler', 'All Tasks')}
                     </Text>
                     {showMyMissions && myMissions.length > 0 && (
                         <Badge colorScheme="red" borderRadius="full" px="2">
-                            {myMissions.filter(m => m.status !== 'Completed').length} Bekliyor
+                            {myMissions.filter(m => m.status !== 'Completed').length} {t('Bekliyor', 'Pending')}
                         </Badge>
                     )}
                 </Flex>
@@ -157,7 +159,7 @@ export default function Missions() {
                 <Flex align="center" gap="20px">
                     <FormControl display="flex" alignItems="center" gap="8px" w="auto">
                         <FormLabel mb="0" fontWeight="600" fontSize="sm" color="secondaryGray.700">
-                            Görevlerim
+                            {t('Görevlerim', 'My Tasks')}
                         </FormLabel>
                         <Switch
                             isChecked={!showMyMissions}
@@ -166,7 +168,7 @@ export default function Missions() {
                             size="md"
                         />
                         <FormLabel mb="0" fontWeight="600" fontSize="sm" color="secondaryGray.700">
-                            Tüm Görevler
+                            {t('Tüm Görevler', 'All Tasks')}
                         </FormLabel>
                     </FormControl>
 
@@ -179,7 +181,7 @@ export default function Missions() {
                             onClick={handleAddClick}
                             size="md"
                         >
-                            Yeni Görev Ekle
+                            {t('Yeni Görev Ekle', 'Add New Task')}
                         </Button>
                     )}
                 </Flex>

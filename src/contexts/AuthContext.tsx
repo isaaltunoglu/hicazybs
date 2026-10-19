@@ -3,6 +3,7 @@ import { onAuthStateChanged, signOut as firebaseSignOut, User } from 'firebase/a
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { getAllRoles, resolveRolePermissions } from '../services/roleService';
+import { DEMO_COMPANY, DEMO_STORAGE_KEY, isDemoModeActive, setDemoModeActive } from '../services/demoData';
 
 const superAdminEmails = (process.env.REACT_APP_SUPERADMIN_EMAILS || '')
     .split(',')
@@ -13,6 +14,7 @@ interface AuthContextType {
     user: User | null;
     loading: boolean;
     isApproved: boolean;
+    isDemoMode: boolean;
     companyId: string | null;
     subTeamId: string | null;
     subTeamName: string | null;
@@ -22,6 +24,7 @@ interface AuthContextType {
     isManager: boolean;
     userName: string | null;
     userSurname: string | null;
+    enableDemoMode: (mode?: 'company' | 'onboarding') => void;
     refreshUserProfile: () => Promise<void>;
     signOut: () => Promise<void>;
 }
@@ -30,6 +33,7 @@ const AuthContext = createContext<AuthContextType>({
     user: null,
     loading: true,
     isApproved: false,
+    isDemoMode: false,
     companyId: null,
     subTeamId: null,
     subTeamName: null,
@@ -39,6 +43,7 @@ const AuthContext = createContext<AuthContextType>({
     isManager: false,
     userName: null,
     userSurname: null,
+    enableDemoMode: () => {},
     refreshUserProfile: async () => {},
     signOut: async () => {},
 });
@@ -49,6 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [isApproved, setIsApproved] = useState(false);
+    const [isDemoMode, setIsDemoMode] = useState(false);
     const [companyId, setCompanyId] = useState<string | null>(null);
     const [subTeamId, setSubTeamId] = useState<string | null>(null);
     const [subTeamName, setSubTeamName] = useState<string | null>(null);
@@ -59,8 +65,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [userName, setUserName] = useState<string | null>(null);
     const [userSurname, setUserSurname] = useState<string | null>(null);
 
+    const applyDemoState = useCallback((mode: 'company' | 'onboarding') => {
+        const fakeUser = {
+            uid: 'demo-user-1',
+            email: 'ahmet.yilmaz@novateknoloji.com',
+            displayName: 'Ahmet Yılmaz',
+        } as unknown as User;
+
+        setUser(fakeUser);
+        setIsDemoMode(true);
+        if (mode === 'onboarding') {
+            setIsApproved(false);
+            setCompanyId(null);
+            setSubTeamId(null);
+            setSubTeamName(null);
+            setDepartment(null);
+            setRole(null);
+            setUserName('Ahmet');
+            setUserSurname('Yılmaz');
+            setIsSuperAdmin(false);
+            setIsManager(false);
+        } else {
+            setIsApproved(true);
+            setCompanyId(DEMO_COMPANY.id);
+            setSubTeamId(null);
+            setSubTeamName(null);
+            setDepartment('Yönetim & Strateji');
+            setRole('Süper Yönetici');
+            setUserName('Ahmet');
+            setUserSurname('Yılmaz');
+            setIsSuperAdmin(true);
+            setIsManager(true);
+        }
+        setLoading(false);
+    }, []);
+
+    const enableDemoMode = useCallback(
+        (mode: 'company' | 'onboarding' = 'company') => {
+            try {
+                localStorage.setItem(DEMO_STORAGE_KEY, mode === 'onboarding' ? 'onboarding' : 'true');
+            } catch {
+                // ignore
+            }
+            applyDemoState(mode);
+        },
+        [applyDemoState]
+    );
+
     const loadUserProfile = useCallback(async (firebaseUser: User | null) => {
+        const storedDemo = (() => {
+            try {
+                return localStorage.getItem(DEMO_STORAGE_KEY);
+            } catch {
+                return null;
+            }
+        })();
+
+        if (storedDemo === 'true' || storedDemo === 'onboarding') {
+            applyDemoState(storedDemo === 'onboarding' ? 'onboarding' : 'company');
+            return;
+        }
+
         if (!firebaseUser) {
+            setIsDemoMode(false);
             setIsApproved(false);
             setCompanyId(null);
             setSubTeamId(null);
@@ -132,25 +199,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setIsSuperAdmin(false);
             setIsManager(false);
         }
-    }, []);
+    }, [applyDemoState]);
 
     useEffect(() => {
+        const storedDemo = (() => {
+            try {
+                return localStorage.getItem(DEMO_STORAGE_KEY);
+            } catch {
+                return null;
+            }
+        })();
+        if (storedDemo === 'true' || storedDemo === 'onboarding') {
+            applyDemoState(storedDemo === 'onboarding' ? 'onboarding' : 'company');
+            return;
+        }
+
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             setUser(firebaseUser);
             await loadUserProfile(firebaseUser);
             setLoading(false);
         });
         return unsubscribe;
-    }, [loadUserProfile]);
+    }, [loadUserProfile, applyDemoState]);
 
     const refreshUserProfile = useCallback(async () => {
+        if (isDemoModeActive()) {
+            applyDemoState('company');
+            return;
+        }
         if (auth.currentUser) {
             await loadUserProfile(auth.currentUser);
         }
-    }, [loadUserProfile]);
+    }, [loadUserProfile, applyDemoState]);
 
     const signOut = async () => {
-        await firebaseSignOut(auth);
+        setDemoModeActive(false);
+        setIsDemoMode(false);
+        try {
+            await firebaseSignOut(auth);
+        } catch {
+            // ignore in demo mode
+        }
+        setUser(null);
         setIsApproved(false);
         setCompanyId(null);
         setSubTeamId(null);
@@ -169,6 +259,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 user,
                 loading,
                 isApproved,
+                isDemoMode,
                 companyId,
                 subTeamId,
                 subTeamName,
@@ -178,6 +269,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 isManager,
                 userName,
                 userSurname,
+                enableDemoMode,
                 refreshUserProfile,
                 signOut,
             }}
