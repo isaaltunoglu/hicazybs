@@ -1,0 +1,168 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function approvedUserPath(uid) {
+      return /databases/$(database)/documents/approvedUsers/$(uid);
+    }
+
+    function isApprovedUser() {
+      return isSignedIn() && exists(approvedUserPath(request.auth.uid));
+    }
+
+    function approvedUserData() {
+      return get(approvedUserPath(request.auth.uid)).data;
+    }
+
+    function currentUserRole() {
+      return isApprovedUser()
+        ? approvedUserData().role
+        : null;
+    }
+
+    function isSuperAdmin() {
+      return isApprovedUser() && (
+        (approvedUserData().keys().hasAny(['isSuperAdmin']) && approvedUserData().isSuperAdmin == true) ||
+        currentUserRole() in ['Super Admin', 'Süper Yönetici', 'CTO']
+      );
+    }
+
+    function isManager() {
+      return isApprovedUser() && (
+        isSuperAdmin() ||
+        (approvedUserData().keys().hasAny(['isManager']) && approvedUserData().isManager == true) ||
+        currentUserRole() in [
+          'Yönetici',
+          'Birim Sorumlusu',
+          'Admin',
+          'Manager',
+          'Team Captain',
+          'Vice Captain',
+          'Captain'
+        ]
+      );
+    }
+
+    function updatesOnly(allowedKeys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowedKeys);
+    }
+
+    match /organizationSettings/{settingId} {
+      allow read: if true;
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /companies/{companyId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isSuperAdmin() || (
+        isSignedIn() && resource.data.ownerUid == request.auth.uid
+      );
+    }
+
+    match /subTeams/{subTeamId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isManager();
+    }
+
+    match /invitations/{inviteKey} {
+      // Anyone can verify a specific invite key via get(), while company managers can list/create/manage invitations
+      allow get: if true;
+      allow list, create, delete: if isManager();
+      allow update: if isManager() || (
+        isSignedIn() && updatesOnly(['status', 'acceptedByUid', 'acceptedAt'])
+      );
+    }
+
+    match /roles/{roleId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /departments/{deptId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isSuperAdmin();
+    }
+
+    match /pendingUsers/{userId} {
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && !exists(approvedUserPath(userId))
+        && request.resource.data.uid == userId
+        && !('isSuperAdmin' in request.resource.data && request.resource.data.isSuperAdmin == true)
+        && !('isManager' in request.resource.data && request.resource.data.isManager == true);
+      allow read: if isManager() || (isSignedIn() && request.auth.uid == userId);
+      allow update: if false;
+      allow delete: if isManager() || (isSignedIn() && request.auth.uid == userId);
+    }
+
+    match /approvedUsers/{userId} {
+      allow read: if isApprovedUser() || (isSignedIn() && request.auth.uid == userId);
+      allow create: if isManager() || (
+        isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.uid == userId
+      );
+      allow update, delete: if isSuperAdmin() || isManager();
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if isApprovedUser();
+      allow create: if isManager();
+      allow update, delete: if isManager() || (
+        isApprovedUser() && resource.data.createdByUid == request.auth.uid
+      );
+    }
+
+    match /teamLinks/{linkId} {
+      allow read: if isApprovedUser();
+      allow create: if isManager();
+      allow update, delete: if isManager() || (
+        isApprovedUser() && resource.data.createdByUid == request.auth.uid
+      );
+    }
+
+    match /inventory/{itemId} {
+      allow read: if isApprovedUser();
+      allow create, update, delete: if isManager();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isApprovedUser();
+      allow create, update, delete: if isManager();
+    }
+
+    match /missions/{missionId} {
+      allow read: if isApprovedUser();
+      allow create, delete: if isManager();
+      allow update: if isManager() || (
+        isApprovedUser() && updatesOnly(['status', 'processUpdates', 'updatedAt'])
+      );
+    }
+
+    match /workshopSettings/{settingId} {
+      allow read: if isApprovedUser();
+      allow create, update, delete: if isManager();
+    }
+
+    match /workshopSessions/{sessionId} {
+      allow read: if isApprovedUser();
+      allow create: if isApprovedUser() && request.resource.data.uid == request.auth.uid;
+      allow update: if isManager() || (
+        isApprovedUser()
+        && resource.data.uid == request.auth.uid
+        && updatesOnly(['checkOut', 'duration', 'status'])
+      );
+      allow delete: if isManager();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
